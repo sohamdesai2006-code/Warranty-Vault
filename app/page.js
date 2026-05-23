@@ -113,11 +113,11 @@ export default function Home() {
         return
       }
 
-      const response = await fetch('/api/send-test', {
-        method: 'POST',
+      const response = await fetch('/api/cron-scanner', {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': 'Bearer development_secret_key_123',
         },
       })
       const data = await response.json()

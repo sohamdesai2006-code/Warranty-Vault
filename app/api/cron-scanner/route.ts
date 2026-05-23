@@ -4,34 +4,18 @@ import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return new Response('Unauthorized', { status: 401 });
+    }
+
     try {
-        // Read the user's access token from the Authorization header
-        const authHeader = request.headers.get('Authorization');
-        const accessToken = authHeader?.replace('Bearer ', '');
-
-        if (!accessToken) {
-            return NextResponse.json({ error: 'Unauthorized: No access token provided.' }, { status: 401 });
-        }
-
-        // Create a Supabase client authenticated as the user
+        // Create a Supabase client using the Service Role Key to bypass RLS
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                global: {
-                    headers: { Authorization: `Bearer ${accessToken}` },
-                },
-            }
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
-
-        // Verify the user is authenticated
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized: Invalid session.' }, { status: 401 });
-        }
-
-        const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Customer';
 
         // Calculate the date range: today → 7 days from now
         const today = new Date();
@@ -42,11 +26,12 @@ export async function POST(request: Request) {
         const todayISO = today.toISOString().split('T')[0];
         const sevenDaysISO = sevenDaysLater.toISOString().split('T')[0];
 
-        // Query warranties expiring in the next 7 days for this user
+        console.log(`[DEBUG] Looking for warranties expiring between: ${todayISO} and ${sevenDaysISO}`);
+
+        // Query warranties expiring in the next 7 days across the platform
         const { data: warranties, error: dbError } = await supabase
             .from('warranties')
-            .select('id, name, expiry_date')
-            .eq('user_id', user.id)
+            .select('id, name, expiry_date, user_id')
             .gte('expiry_date', todayISO)
             .lte('expiry_date', sevenDaysISO);
 
@@ -63,6 +48,23 @@ export async function POST(request: Request) {
         const results = [];
 
         for (const warranty of warranties) {
+            console.log(`[DEBUG] Found warranty: ${warranty.name}, raw expiry_date: ${warranty.expiry_date}`);
+
+            // Fetch user info for this warranty using Supabase Admin Auth API
+            const { data: userData, error: userError } = await supabase.auth.admin.getUserById(warranty.user_id);
+            if (userError) {
+                console.error(`Error fetching user details for user_id ${warranty.user_id}:`, userError.message);
+            }
+
+            const user = userData?.user;
+            const userName = user?.user_metadata?.full_name || 'Customer';
+            const userEmail = user?.email;
+
+            if (!userEmail) {
+                console.error(`Skipping warranty ${warranty.id}: No email found for user_id ${warranty.user_id}`);
+                continue;
+            }
+
             const formattedDate = new Date(warranty.expiry_date).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
@@ -83,7 +85,7 @@ Note: This is an automated, system-generated email. Please do not reply directly
 
             const { data, error } = await resend.emails.send({
                 from: 'onboarding@resend.dev',
-                to: user.email!,
+                to: userEmail,
                 subject: `⚠️ Warranty Expiring Soon: ${warranty.name}`,
                 text: `Hey, your warranty for ${warranty.name} is expiring on ${formattedDate}!`,
                 html: htmlContent,
