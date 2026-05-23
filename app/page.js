@@ -103,21 +103,32 @@ export default function Home() {
       .join(' ')
   }
 
-  const handleTestEmail = async (productName = 'your product') => {
+  const handleTestEmail = async () => {
     setSendingEmail(true)
     try {
+      // Get the user's current session token to authenticate the API call
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        alert('You must be logged in to send notifications.')
+        return
+      }
+
       const response = await fetch('/api/send-test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ productName }),
       })
       const data = await response.json()
       if (response.ok) {
-        alert(`Email Sent for ${productName}! Check your inbox.`)
+        if (data.emailsSent === 0) {
+          alert('No warranties are expiring in the next 7 days!')
+        } else {
+          alert(`✅ ${data.message}`)
+        }
       } else {
-        throw new Error(data.error || 'Failed to send email')
+        throw new Error(data.error || 'Failed to send emails')
       }
     } catch (error) {
       console.error('Error sending email:', error)
