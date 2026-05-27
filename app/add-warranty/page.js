@@ -11,6 +11,18 @@ export default function AddWarranty() {
     const canvasRef = useRef(null)
     const streamRef = useRef(null)
     const [isCameraOpen, setIsCameraOpen] = useState(false)
+    const wasCameraOpenRef = useRef(false)
+    const isCameraOpenRef = useRef(false)
+    const isMountedRef = useRef(true)
+
+    isCameraOpenRef.current = isCameraOpen
+
+    useEffect(() => {
+        isMountedRef.current = true
+        return () => {
+            isMountedRef.current = false
+        }
+    }, [])
 
     useEffect(() => {
         const checkUser = async () => {
@@ -122,21 +134,36 @@ export default function AddWarranty() {
         if (file) handleFileSelect(file)
     }
 
-    const startCamera = async () => {
+    async function startCamera() {
+        if (document.hidden || !isMountedRef.current) return
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment', aspectRatio: { ideal: 3/4 } }
             })
+            if (!isMountedRef.current || document.hidden) {
+                stream.getTracks().forEach((t) => t.stop())
+                return
+            }
             streamRef.current = stream
             setIsCameraOpen(true)
         } catch (err) {
+            if (!isMountedRef.current || document.hidden) return
             try {
                 const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { aspectRatio: { ideal: 3/4 } } })
+                if (!isMountedRef.current || document.hidden) {
+                    fallbackStream.getTracks().forEach((t) => t.stop())
+                    return
+                }
                 streamRef.current = fallbackStream
                 setIsCameraOpen(true)
             } catch (fallbackErr) {
+                if (!isMountedRef.current || document.hidden) return
                 try {
                     const fallbackStream2 = await navigator.mediaDevices.getUserMedia({ video: true })
+                    if (!isMountedRef.current || document.hidden) {
+                        fallbackStream2.getTracks().forEach((t) => t.stop())
+                        return
+                    }
                     streamRef.current = fallbackStream2
                     setIsCameraOpen(true)
                 } catch (err3) {
@@ -146,10 +173,37 @@ export default function AddWarranty() {
         }
     }
 
-    const stopCamera = () => {
-        if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null }
-        setIsCameraOpen(false)
+    function stopCamera() {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((t) => t.stop())
+            streamRef.current = null
+        }
+        if (isMountedRef.current) {
+            setIsCameraOpen(false)
+        }
     }
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                if (isCameraOpenRef.current || streamRef.current) {
+                    stopCamera()
+                    wasCameraOpenRef.current = true
+                }
+            } else {
+                if (wasCameraOpenRef.current) {
+                    startCamera()
+                    wasCameraOpenRef.current = false
+                }
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            stopCamera()
+        }
+    }, [])
 
     const capturePhoto = () => {
         if (!videoRef.current || !canvasRef.current) return
@@ -207,41 +261,41 @@ export default function AddWarranty() {
         }
     }
 
-    const inputClass = "w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-white placeholder-neutral-500 text-sm"
+    const inputClass = "w-full px-3 py-2 bg-gray-50 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500 text-sm"
 
     return (
-        <div className="h-screen max-h-screen overflow-hidden flex flex-col p-6 bg-black text-white" style={{contain:'strict'}}>
+        <div className="h-screen max-h-screen overflow-hidden flex flex-col pt-1.5 pb-3 px-4 md:px-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-200" style={{contain:'strict'}}>
             <canvas ref={canvasRef} className="hidden" />
 
             {/* ── Center-Aligned Content Container ── */}
-            <div className="w-full max-w-5xl mx-auto px-4 mt-6 flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div className="w-full max-w-5xl mx-auto px-4 mt-1 flex-1 min-h-0 overflow-hidden flex flex-col">
                 {/* ── Header Row (Left-aligned with Left Card) ── */}
-                <div className="shrink-0 flex items-center justify-between mb-4 w-full">
+                <div className="shrink-0 flex items-center justify-between mb-2 w-full">
                     <div>
-                        <Link href="/" className="text-neutral-400 hover:text-white text-xs inline-flex items-center gap-1 transition-colors mb-0.5">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <Link href="/" className="text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white text-sm inline-flex items-center gap-1 transition-colors mb-0.5 font-medium">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                             </svg>
                             Back to Dashboard
                         </Link>
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent leading-tight">
+                        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight">
                             Add New Warranty
                         </h1>
                     </div>
                     {scanSuccess && (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg animate-fade-in">
-                            <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <p className="text-xs text-emerald-400 font-medium">AI auto-filled — review before saving.</p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">AI auto-filled — review before saving.</p>
                         </div>
                     )}
                     {scanError && (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/30 rounded-lg animate-fade-in animate-pulse">
-                            <svg className="w-3.5 h-3.5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-red-500 dark:text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p className="text-xs text-red-400 font-medium">
+                            <p className="text-xs text-red-600 dark:text-red-400 font-medium">
                                 {scanError.toLowerCase().includes('quota') || scanError.toLowerCase().includes('limit') || scanError.toLowerCase().includes('429')
                                     ? 'API scan limit reached. Please fill form manually.'
                                     : `Scan failed: ${scanError}`}
@@ -251,12 +305,12 @@ export default function AddWarranty() {
                 </div>
 
                 {/* ── Main grid ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch flex-1 min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch flex-1 min-h-0">
 
                 {/* LEFT: form card */}
-                <div className="bg-[#121212] rounded-xl border border-zinc-800 p-6 flex flex-col justify-between h-full">
-                    <form onSubmit={handleSubmit} className="flex flex-col h-full justify-between">
-                        <div className="flex flex-col gap-4">
+                <div className="bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col justify-between h-full min-h-0 shadow-sm dark:shadow-none transition-colors duration-200">
+                    <form onSubmit={handleSubmit} className="flex flex-col h-full justify-between min-h-0">
+                        <div className="flex flex-col gap-3.5 flex-1">
 
                         {/* Product Name */}
                         <div>
@@ -275,7 +329,7 @@ export default function AddWarranty() {
                         {/* Description */}
                         <div>
                             <label htmlFor="description" className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-1">Description</label>
-                            <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} placeholder="e.g. 3-year extended warranty for screen damage" className={`${inputClass} resize-none h-28`} />
+                            <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} placeholder="e.g. 3-year extended warranty for screen damage" className={`${inputClass} resize-none h-20`} />
                         </div>
 
                         {/* Dates */}
@@ -288,7 +342,7 @@ export default function AddWarranty() {
                                     type="date" id="purchase_date" name="purchase_date" required
                                     value={formData.purchase_date} onChange={handleChange}
                                     max={formData.expiry_date ? (formData.expiry_date < todayString ? formData.expiry_date : todayString) : todayString}
-                                    className={`${inputClass} ${dateError ? 'border-red-400 dark:border-red-500' : ''}`}
+                                    className={`${inputClass} ${dateError ? 'border-red-400' : ''}`}
                                 />
                             </div>
                             <div>
@@ -299,11 +353,11 @@ export default function AddWarranty() {
                                     type="date" id="expiry_date" name="expiry_date" required
                                     value={formData.expiry_date} onChange={handleChange}
                                     min={formData.purchase_date || undefined}
-                                    className={`${inputClass} ${dateError ? 'border-red-400 dark:border-red-500' : ''}`}
+                                    className={`${inputClass} ${dateError ? 'border-red-400' : ''}`}
                                 />
                             </div>
                             {dateError && (
-                                <p className="col-span-2 text-xs text-red-500 flex items-center gap-1 -mt-1">
+                                <p className="col-span-2 text-xs text-red-500 dark:text-red-400 flex items-center gap-1 -mt-0.5">
                                     <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -328,7 +382,7 @@ export default function AddWarranty() {
                         <div>
                             <label className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-1">Product Photo</label>
                             <label htmlFor="product_photo" className="flex items-center gap-2 w-full px-3 py-2 bg-gray-50 dark:bg-neutral-950 border border-dashed border-gray-300 dark:border-neutral-700 rounded-xl cursor-pointer hover:border-purple-500 transition-all">
-                                <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 text-gray-400 dark:text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                                 <span className="text-xs text-gray-500 dark:text-neutral-400 truncate">
@@ -343,9 +397,9 @@ export default function AddWarranty() {
                     <button
                             type="submit"
                             disabled={status === 'loading' || isScanning}
-                            className={`py-3 px-6 w-full rounded-lg font-medium text-white text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                            className={`py-3 px-6 w-full rounded-lg font-medium text-white text-sm shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] mt-2 shrink-0 ${
                                 status === 'loading' || isScanning
-                                    ? 'bg-gray-400 dark:bg-neutral-600 cursor-not-allowed'
+                                    ? 'bg-gray-200 dark:bg-neutral-800 text-gray-400 dark:text-neutral-500 cursor-not-allowed'
                                     : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500'
                             }`}
                         >
@@ -361,10 +415,10 @@ export default function AddWarranty() {
                         </button>
 
                         {status === 'error' && (
-                            <p className="text-red-500 dark:text-red-400 text-xs text-center">{message}</p>
+                            <p className="text-red-500 dark:text-red-400 text-xs text-center mt-1 shrink-0">{message}</p>
                         )}
                         {status === 'success' && (
-                            <p className="text-emerald-500 text-xs text-center font-medium">{message}</p>
+                            <p className="text-emerald-500 text-xs text-center font-medium mt-1 shrink-0">{message}</p>
                         )}
                     </form>
                 </div>
@@ -373,24 +427,24 @@ export default function AddWarranty() {
                 <div className="flex flex-col gap-4 h-full min-h-0">
 
                     {/* Block A: Camera */}
-                    <div className={`flex-1 flex flex-col bg-[#121212] rounded-xl border border-zinc-800 p-5 min-h-0 ${isCameraOpen ? 'max-w-md w-full mx-auto' : ''}`}>
-                        <div className="flex items-center gap-2 mb-3 shrink-0">
-                            <div className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
+                    <div className={`flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200 ${isCameraOpen ? 'max-w-md w-full mx-auto' : ''}`}>
+                        <div className="flex items-center gap-2 mb-2 shrink-0">
+                            <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
                                 <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-sm font-semibold text-white">Take a Photo</h3>
-                                <p className="text-[11px] text-neutral-500">Use your device camera to scan the receipt</p>
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Take a Photo</h3>
+                                <p className="text-[11px] text-gray-500 dark:text-neutral-400">Use your device camera to scan the receipt</p>
                             </div>
                         </div>
 
                         {isCameraOpen ? (
                             <div className="flex flex-col gap-3 w-full flex-1 justify-center min-h-0">
-                                <div className="relative rounded-xl overflow-hidden bg-black h-[460px] w-full max-w-md mx-auto">
-                                    <video ref={videoRef} className="aspect-[3/4] w-full h-full object-cover rounded-xl bg-black" autoPlay playsInline muted />
+                                <div className="relative rounded-xl overflow-hidden bg-black flex-1 min-h-0 w-full max-w-md mx-auto">
+                                    <video ref={videoRef} className="w-full h-full object-cover rounded-xl bg-black" autoPlay playsInline muted />
                                     <div className="absolute inset-0 pointer-events-none">
                                         <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-white/70 rounded-tl" />
                                         <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-white/70 rounded-tr" />
@@ -411,7 +465,7 @@ export default function AddWarranty() {
                         ) : (
                             <button
                                 onClick={startCamera}
-                                className="flex-1 flex flex-col justify-center items-center w-full h-full gap-2 border-2 border-dashed border-blue-200 dark:border-blue-500/30 rounded-xl bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:border-blue-400 transition-all group"
+                                className="flex-1 flex flex-col justify-center items-center w-full h-full gap-2 border-2 border-dashed border-blue-200 dark:border-blue-500/30 rounded-xl bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:border-blue-400 transition-all group p-2"
                             >
                                 <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -429,16 +483,16 @@ export default function AddWarranty() {
 
                     {/* Block B: Upload */}
                     {!isCameraOpen && (
-                        <div className="flex-1 flex flex-col bg-[#121212] rounded-xl border border-zinc-800 p-5 min-h-0">
-                            <div className="flex items-center gap-2 mb-3 shrink-0">
-                                <div className="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center shrink-0">
+                        <div className="flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200">
+                            <div className="flex items-center gap-2 mb-2 shrink-0">
+                                <div className="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-500/20 flex items-center justify-center shrink-0">
                                     <svg className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-semibold text-white">Upload Receipt</h3>
-                                    <p className="text-[11px] text-neutral-500">Drag &amp; drop or browse — AI auto-fills your form</p>
+                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Upload Receipt</h3>
+                                    <p className="text-[11px] text-gray-500 dark:text-neutral-400">Drag &amp; drop or browse — AI auto-fills your form</p>
                                 </div>
                             </div>
 
@@ -446,7 +500,7 @@ export default function AddWarranty() {
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
-                                className={`flex-1 flex flex-col justify-center items-center w-full h-full gap-3 border-2 border-dashed rounded-xl transition-all ${
+                                className={`flex-1 flex flex-col justify-center items-center w-full h-full gap-2 border-2 border-dashed rounded-xl transition-all p-2 min-h-0 ${
                                     isDragging
                                         ? 'border-purple-500 bg-purple-50 dark:bg-purple-500/10 scale-[1.01]'
                                         : isScanning
@@ -458,46 +512,45 @@ export default function AddWarranty() {
                             >
                                 {isScanning ? (
                                     <>
-                                        <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
-                                            <svg className="animate-spin w-5 h-5 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <div className="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-500/20 flex items-center justify-center">
+                                            <svg className="animate-spin w-4 h-4 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
                                         </div>
                                         <div className="text-center">
                                             <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 animate-pulse">AI is scanning...</p>
-                                            <p className="text-[11px] text-gray-400 dark:text-neutral-500 mt-0.5">Extracting product details</p>
                                         </div>
                                     </>
                                 ) : receiptFile ? (
                                     <>
-                                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center">
-                                            <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-500/20 flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-[180px]">{receiptFile.name}</p>
-                                            <button type="button" onClick={() => { setReceiptFile(null); setScanSuccess(false); setScanError('') }} className="text-[11px] text-gray-400 hover:text-red-500 mt-1 transition-colors">
+                                            <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate max-w-[140px]">{receiptFile.name}</p>
+                                            <button type="button" onClick={() => { setReceiptFile(null); setScanSuccess(false); setScanError('') }} className="text-[11px] text-gray-500 dark:text-neutral-400 hover:text-red-500 mt-0.5 transition-colors">
                                                 Remove file
                                             </button>
                                         </div>
                                     </>
                                 ) : (
                                     <>
-                                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-neutral-800 flex items-center justify-center">
-                                            <svg className="w-5 h-5 text-gray-400 dark:text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-neutral-800 flex items-center justify-center">
+                                            <svg className="w-4 h-4 text-gray-400 dark:text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                             </svg>
                                         </div>
-                                        <p className="text-xs text-gray-500 dark:text-neutral-400 font-medium">
-                                            {isDragging ? 'Drop it here!' : 'Drag & drop your receipt'}
+                                        <p className="text-[11px] text-gray-500 dark:text-neutral-400 font-medium">
+                                            {isDragging ? 'Drop it here!' : 'Drag & drop receipt'}
                                         </p>
                                     </>
                                 )}
 
                                 {!isScanning && (
-                                    <label htmlFor="receipt" className="px-4 py-1.5 bg-gray-900 dark:bg-white hover:bg-gray-700 dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-semibold rounded-lg cursor-pointer transition-all">
+                                    <label htmlFor="receipt" className="px-3.5 py-1.5 bg-gray-900 dark:bg-white hover:bg-gray-700 dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-semibold rounded-lg cursor-pointer transition-all">
                                         Browse File
                                     </label>
                                 )}
