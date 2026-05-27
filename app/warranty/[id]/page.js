@@ -13,9 +13,98 @@ export default function WarrantyDetail() {
     const [loading, setLoading] = useState(true)
     const [isPortrait, setIsPortrait] = useState(false)
 
+    // Notebook / Product Log states
+    const [notes, setNotes] = useState([])
+    const [newNoteTitle, setNewNoteTitle] = useState('')
+    const [newNoteContent, setNewNoteContent] = useState('')
+    const [savingNote, setSavingNote] = useState(false)
+
+    // Description edit states
+    const [isEditingDesc, setIsEditingDesc] = useState(false)
+    const [descInput, setDescInput] = useState('')
+    const [savingDesc, setSavingDesc] = useState(false)
+
     useEffect(() => {
-        if (id) fetchWarranty()
+        if (id) {
+            fetchWarranty()
+            fetchNotes()
+        }
     }, [id])
+
+    const fetchNotes = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            const { data, error } = await supabase
+                .from('notebook_simulations')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('warranty_id', id)
+                .order('created_at', { ascending: false })
+
+            if (error) throw error
+            setNotes(data || [])
+        } catch (error) {
+            console.error('Error fetching notes:', error.message)
+        }
+    }
+
+    const handleSaveNote = async (e) => {
+        e.preventDefault()
+        if (!newNoteTitle.trim() || !newNoteContent.trim()) return
+
+        setSavingNote(true)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                alert('You must be logged in to save a note.')
+                return
+            }
+
+            const { data, error } = await supabase
+                .from('notebook_simulations')
+                .insert([{
+                    title: newNoteTitle.trim(),
+                    content: newNoteContent.trim(),
+                    user_id: user.id,
+                    warranty_id: id
+                }])
+                .select()
+                .single()
+
+            if (error) throw error
+
+            if (data) {
+                setNotes((prevNotes) => [data, ...prevNotes])
+            }
+            setNewNoteTitle('')
+            setNewNoteContent('')
+        } catch (error) {
+            console.error('Error saving note:', error.message)
+            alert('Error saving note: ' + error.message)
+        } finally {
+            setSavingNote(false)
+        }
+    }
+
+    const handleDeleteNote = async (noteId) => {
+        if (!confirm('Are you sure you want to delete this note?')) return
+
+        try {
+            const { error } = await supabase
+                .from('notebook_simulations')
+                .delete()
+                .eq('id', noteId)
+
+            if (error) throw error
+
+            setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId))
+        } catch (error) {
+            console.error('Error deleting note:', error.message)
+            alert('Error deleting note: ' + error.message)
+        }
+    }
 
     const fetchWarranty = async () => {
         try {
@@ -31,10 +120,34 @@ export default function WarrantyDetail() {
 
             if (error) throw error
             setWarranty(data)
+            setDescInput(data?.description || '')
         } catch (error) {
             console.error('Error fetching warranty:', error.message)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleSaveDescription = async () => {
+        setSavingDesc(true)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error('Unauthorized')
+
+            const { error } = await supabase
+                .from('warranties')
+                .update({ description: descInput.trim() })
+                .eq('id', id)
+                .eq('user_id', user.id)
+
+            if (error) throw error
+            setWarranty((prev) => ({ ...prev, description: descInput.trim() }))
+            setIsEditingDesc(false)
+        } catch (error) {
+            console.error('Error saving description:', error.message)
+            alert('Failed to save description: ' + error.message)
+        } finally {
+            setSavingDesc(false)
         }
     }
 
@@ -64,6 +177,29 @@ export default function WarrantyDetail() {
         } catch (error) {
             console.error('Error deleting product:', error.message)
             alert('Failed to delete product')
+        }
+    }
+
+    const handleDownloadReceipt = async (e, url, productName) => {
+        e.preventDefault()
+        e.stopPropagation()
+        try {
+            const res = await fetch(url)
+            if (!res.ok) throw new Error('Network response was not ok')
+            const blob = await res.blob()
+            const blobUrl = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = blobUrl
+            const fileExtension = url.split('.').pop().split('?')[0] || 'jpg'
+            const sanitizedName = productName.toLowerCase().replace(/[^a-z0-9]/g, '_')
+            a.download = `${sanitizedName}_receipt.${fileExtension}`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            window.URL.revokeObjectURL(blobUrl)
+        } catch (err) {
+            console.error('Error downloading receipt, falling back to open in new tab:', err)
+            window.open(url, '_blank')
         }
     }
 
@@ -104,6 +240,7 @@ export default function WarrantyDetail() {
     }
 
     const daysLeft = getDaysRemaining(warranty.expiry_date)
+    const receiptUrl = warranty.receipt_url || warranty.product_receipt_image_url
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white pb-12 transition-colors duration-200">
@@ -161,72 +298,289 @@ export default function WarrantyDetail() {
                     ${isPortrait ? 'w-full' : 'w-full'}
                 `}>
 
-                    {/* Header Card */}
-                    <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 md:p-8 shadow-md transition-colors duration-200">
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-200 dark:border-neutral-600">
-                                {warranty.category || 'Uncategorized'}
-                            </span>
-                            <span className={`flex items-center gap-1.5 text-sm font-semibold ${getStatusColor(daysLeft)}`}>
-                                <span className="w-2 h-2 rounded-full bg-current"></span>
-                                {getStatusText(daysLeft)}
-                            </span>
+                    {/* Top Row Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* Left Column (Wide) */}
+                        <div className="lg:col-span-2 flex flex-col gap-6">
+                            {/* Header Card */}
+                            <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 md:p-8 shadow-md transition-colors duration-200">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-neutral-300 border border-gray-200 dark:border-neutral-600">
+                                        {warranty.category || 'Uncategorized'}
+                                    </span>
+                                    <span className={`flex items-center gap-1.5 text-sm font-semibold ${getStatusColor(daysLeft)}`}>
+                                        <span className="w-2 h-2 rounded-full bg-current"></span>
+                                        {getStatusText(daysLeft)}
+                                    </span>
+                                </div>
+
+                                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{warranty.name}</h1>
+                                <p className="text-xl text-gray-500 dark:text-neutral-400 font-medium mb-6">{warranty.brand}</p>
+
+                                <div className="flex flex-wrap gap-3">
+                                    <Link
+                                        href={`/edit-warranty/${warranty.id}`}
+                                        className="flex-1 sm:flex-none text-center px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-blue-500/25"
+                                    >
+                                        Edit Product
+                                    </Link>
+                                    <button
+                                        onClick={handleDelete}
+                                        className="flex-1 sm:flex-none px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-red-500/25"
+                                    >
+                                        Delete Product
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Dates Section */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Purchase Date */}
+                                <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-neutral-500 mb-1">Purchase Date</label>
+                                    <p className="text-2xl font-mono font-medium text-gray-900 dark:text-white">
+                                        {warranty.purchase_date ? new Date(warranty.purchase_date).toLocaleDateString(undefined, {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        }) : 'Not recorded'}
+                                    </p>
+                                </div>
+
+                                {/* Expiration Date */}
+                                <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
+                                    <label className="block text-sm font-medium text-gray-500 dark:text-neutral-500 mb-1">Expiration Date</label>
+                                    <p className="text-2xl font-mono font-medium text-gray-900 dark:text-white">
+                                        {new Date(warranty.expiry_date).toLocaleDateString(undefined, {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
+                                    </p>
+                                    <p className={`text-sm mt-1 font-medium ${getStatusColor(daysLeft)}`}>
+                                        {daysLeft < 0 ? `${Math.abs(daysLeft)} days ago` : `${daysLeft} days remaining`}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{warranty.name}</h1>
-                        <p className="text-xl text-gray-500 dark:text-neutral-400 font-medium mb-6">{warranty.brand}</p>
+                        {/* Right Column (Narrow) */}
+                        <div className="lg:col-span-1 flex flex-col justify-between h-full gap-6">
 
-                        <div className="flex flex-wrap gap-3">
-                            <Link
-                                href={`/edit-warranty/${warranty.id}`}
-                                className="flex-1 sm:flex-none text-center px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-blue-500/25"
-                            >
-                                Edit Product
-                            </Link>
-                            <button
-                                onClick={handleDelete}
-                                className="flex-1 sm:flex-none px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-red-500/25"
-                            >
-                                Delete Product
-                            </button>
+                            {/* Description Card */}
+                            <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200 h-[180px] flex flex-col overflow-hidden">
+                                <div className="flex items-center justify-between mb-2 shrink-0">
+                                    <label className="text-sm font-medium text-gray-500 dark:text-neutral-500">Description</label>
+                                    {!isEditingDesc && (
+                                        <button
+                                            onClick={() => { setDescInput(warranty.description || ''); setIsEditingDesc(true) }}
+                                            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+                                        >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                            Edit
+                                        </button>
+                                    )}
+                                </div>
+
+                                {isEditingDesc ? (
+                                    <div className="flex flex-col gap-1.5 flex-1 min-h-0">
+                                        <textarea
+                                            rows={3}
+                                            value={descInput}
+                                            onChange={(e) => setDescInput(e.target.value)}
+                                            placeholder="Add a description for this product..."
+                                            className="flex-1 w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-white text-sm focus:outline-none focus:border-zinc-500 resize-none placeholder-zinc-600 transition-colors min-h-0"
+                                        />
+                                        <div className="flex gap-2 shrink-0">
+                                            <button
+                                                onClick={handleSaveDescription}
+                                                disabled={savingDesc}
+                                                className="flex-1 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors"
+                                            >
+                                                {savingDesc ? 'Saving...' : 'Save'}
+                                            </button>
+                                            <button
+                                                onClick={() => setIsEditingDesc(false)}
+                                                disabled={savingDesc}
+                                                className="flex-1 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm leading-relaxed text-gray-900 dark:text-white overflow-y-auto pr-1 flex-1 min-h-0">
+                                        {warranty.description
+                                            ? warranty.description
+                                            : <span className="text-gray-400 dark:text-neutral-500 italic">Click edit to add a product description...</span>
+                                        }
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Proof of Purchase Card */}
+                            <div className={`bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 shadow-md transition-colors duration-200 flex flex-col ${isPortrait ? 'p-3' : 'p-6'}`}>
+                                <label className={`block font-medium text-gray-500 dark:text-neutral-500 ${isPortrait ? 'text-xs mb-2' : 'text-sm mb-3'}`}>Proof of Purchase</label>
+                                {receiptUrl ? (
+                                    <div className={`flex flex-col items-center justify-center w-full border-2 border-dashed border-blue-500/30 rounded-xl bg-blue-50/50 dark:bg-blue-500/5 ${isPortrait ? 'p-2' : 'p-5'}`}>
+                                        <svg className={`text-blue-500 dark:text-blue-400 shrink-0 animate-fade-in ${isPortrait ? 'w-6 h-6 mb-1' : 'w-8 h-8 mb-2'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span className={`text-zinc-500 dark:text-neutral-400 font-medium text-center ${isPortrait ? 'text-[10px] mb-2' : 'text-xs mb-4'}`}>Receipt Attached</span>
+                                        <div className={`flex flex-col w-full max-w-[200px] ${isPortrait ? 'gap-1.5' : 'gap-2'}`}>
+                                            <a
+                                                href={`${receiptUrl}?t=${Date.now()}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-all shadow-md text-center flex items-center justify-center active:scale-95 ${isPortrait ? 'py-1.5 px-2 text-[11px] gap-1' : 'py-2 text-xs gap-1.5'}`}
+                                            >
+                                                <svg className={isPortrait ? 'w-3 h-3' : 'w-3.5 h-3.5'} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                                {isPortrait ? 'Open' : 'Open Receipt'}
+                                            </a>
+                                            <button
+                                                onClick={(e) => handleDownloadReceipt(e, receiptUrl, warranty.name)}
+                                                className={`w-full bg-neutral-900/80 hover:bg-neutral-800 text-white hover:text-blue-400 rounded-lg font-semibold transition-all border border-neutral-700/50 backdrop-blur-sm shadow-md flex items-center justify-center active:scale-95 ${isPortrait ? 'py-1.5 px-2 text-[11px] gap-1' : 'py-2 text-xs gap-1.5'}`}
+                                            >
+                                                <svg className={isPortrait ? 'w-3 h-3' : 'w-3.5 h-3.5'} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                </svg>
+                                                {isPortrait ? 'Download' : 'Download Receipt'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center text-center text-gray-400 dark:text-neutral-500 text-sm italic py-4 border-2 border-dashed border-gray-200 dark:border-neutral-700 rounded-xl bg-gray-50/50 dark:bg-neutral-800/50">
+                                        No receipt attached
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
                     </div>
 
-                    {/* Metadata Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
-                            <label className="block text-sm font-medium text-gray-500 dark:text-neutral-500 mb-1">Expiration Date</label>
-                            <p className="text-2xl font-mono font-medium text-gray-900 dark:text-white">
-                                {new Date(warranty.expiry_date).toLocaleDateString(undefined, {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                })}
-                            </p>
-                            <p className={`text-sm mt-1 font-medium ${getStatusColor(daysLeft)}`}>
-                                {daysLeft < 0 ? `${Math.abs(daysLeft)} days ago` : `${daysLeft} days remaining`}
-                            </p>
+                    {/* Product Log Section */}
+                    <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-gray-100 dark:border-neutral-700 pb-3 gap-2">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Product Log & Notes</h3>
+                                <p className="text-gray-500 dark:text-neutral-400 text-xs mt-0.5">Keep track of repairs, warranty claims, or invoices for this product.</p>
+                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 w-fit">
+                                {notes.length} {notes.length === 1 ? 'Log' : 'Logs'}
+                            </span>
                         </div>
 
-                        <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
-                            <label className="block text-sm font-medium text-gray-500 dark:text-neutral-500 mb-2">Proof of Purchase</label>
-                            {warranty.receipt_url ? (
-                                <a
-                                    href={`${warranty.receipt_url}?t=${Date.now()}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center justify-center gap-3 w-full p-3 border-2 border-dashed border-blue-500/30 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/5 dark:hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group"
-                                >
-                                    <svg className="w-5 h-5 text-blue-500 dark:text-blue-400 group-hover:text-blue-600 dark:group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    <span className="text-blue-600 dark:text-blue-400 font-semibold group-hover:text-blue-700 dark:group-hover:text-blue-300 text-sm">Open Receipt</span>
-                                </a>
-                            ) : (
-                                <div className="text-center text-gray-400 dark:text-neutral-500 text-sm italic py-2">
-                                    No receipt attached
-                                </div>
-                            )}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Form Column */}
+                            <div className="lg:col-span-1 lg:border-r lg:border-zinc-200 lg:dark:border-zinc-800 lg:pr-6 flex flex-col h-full">
+                                <h4 className="text-base font-bold text-gray-900 dark:text-white mb-3">Add Entry</h4>
+                                <form onSubmit={handleSaveNote} className="flex flex-col flex-1 gap-3">
+                                    {/* Inputs wrapper */}
+                                    <div className="flex flex-col gap-3 flex-1">
+                                        <div>
+                                            <label className="block text-base font-semibold text-zinc-700 dark:text-white mb-1">
+                                                Title
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="E.g., Battery replaced"
+                                                value={newNoteTitle}
+                                                onChange={(e) => setNewNoteTitle(e.target.value)}
+                                                className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700"
+                                            />
+                                        </div>
+                                        <div className="flex-1 flex flex-col">
+                                            <label className="block text-base font-semibold text-zinc-700 dark:text-white mb-1">
+                                                Details / Description
+                                            </label>
+                                            <textarea
+                                                required
+                                                placeholder="E.g., Replaced under warranty at support center."
+                                                value={newNoteContent}
+                                                onChange={(e) => setNewNoteContent(e.target.value)}
+                                                className="w-full flex-1 min-h-[80px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700 resize-none"
+                                            />
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={savingNote}
+                                        className="w-full h-12 shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-md hover:shadow-blue-500/25"
+                                    >
+                                        {savingNote ? (
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                                <span>Saving...</span>
+                                            </div>
+                                        ) : (
+                                            'Save Note'
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* Logs List Column */}
+                            <div className="lg:col-span-2 flex flex-col justify-start">
+                                <h4 className="text-base font-bold text-gray-900 dark:text-white mb-3">History Log</h4>
+                                {notes.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-8 bg-gray-50 dark:bg-neutral-900/30 rounded-xl border border-gray-100 dark:border-neutral-800/50 text-center h-full min-h-[150px]">
+                                        <svg className="w-10 h-10 text-gray-400 dark:text-neutral-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                        </svg>
+                                        <p className="text-gray-500 dark:text-neutral-500 text-xs">No notes recorded yet for this product.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[320px] overflow-y-auto pr-1">
+                                        {notes.map((note) => (
+                                            <div
+                                                key={note.id}
+                                                className="bg-gray-50 dark:bg-neutral-950/40 rounded-xl border border-gray-200 dark:border-neutral-800/80 shadow-sm group/note transition-all hover:border-gray-300 dark:hover:border-neutral-700 p-5 flex flex-col justify-between min-h-[160px]"
+                                            >
+                                                {/* Text container — takes all available space */}
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-start gap-3 mb-1.5">
+                                                        <h5 className="text-sm font-bold text-white break-words flex-1 leading-snug">
+                                                            {note.title}
+                                                        </h5>
+                                                        <button
+                                                            onClick={() => handleDeleteNote(note.id)}
+                                                            className="shrink-0 text-gray-400 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 opacity-0 group-hover/note:opacity-100 focus:opacity-100"
+                                                            title="Delete note"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-white text-xs whitespace-pre-wrap break-words leading-relaxed max-h-[60px] overflow-y-auto">
+                                                        {note.content}
+                                                    </p>
+                                                </div>
+
+                                                {/* Timestamp — sits at bottom, card padding creates the gap */}
+                                                <div className="flex justify-between items-center text-[10px] text-gray-400 dark:text-neutral-500 font-mono pt-3 mt-3 border-t border-gray-200 dark:border-neutral-800">
+                                                    <span>Recorded</span>
+                                                    <span>
+                                                        {new Date(note.created_at).toLocaleDateString(undefined, {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

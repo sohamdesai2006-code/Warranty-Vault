@@ -13,6 +13,7 @@ export default function EditWarranty() {
     const [formData, setFormData] = useState({
         name: '',
         brand: '',
+        purchase_date: '',
         expiry_date: '',
         category: 'Electronics',
     })
@@ -22,6 +23,7 @@ export default function EditWarranty() {
     const [productPhotoFile, setProductPhotoFile] = useState(null)
     const [status, setStatus] = useState('idle')
     const [message, setMessage] = useState('')
+    const [dateError, setDateError] = useState('')
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -45,6 +47,7 @@ export default function EditWarranty() {
             setFormData({
                 name: data.name || '',
                 brand: data.brand || '',
+                purchase_date: data.purchase_date || '',
                 expiry_date: data.expiry_date || '',
                 category: data.category || 'Electronics',
             })
@@ -59,8 +62,26 @@ export default function EditWarranty() {
         }
     }
 
+    const todayString = new Date().toISOString().split('T')[0]
+
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
+        const { name, value } = e.target
+        const updated = { ...formData, [name]: value }
+
+        // Cross-field date validation
+        if (updated.purchase_date) {
+            if (updated.purchase_date > todayString) {
+                setDateError('Purchase date cannot be in the future.')
+            } else if (updated.expiry_date && updated.purchase_date > updated.expiry_date) {
+                setDateError('Purchase date cannot be later than expiration date.')
+            } else {
+                setDateError('')
+            }
+        } else {
+            setDateError('')
+        }
+
+        setFormData(updated)
     }
 
     const handleFileChange = (e) => {
@@ -88,6 +109,12 @@ export default function EditWarranty() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (dateError) return
+        // Extra guard: block future purchase dates
+        if (formData.purchase_date && formData.purchase_date > todayString) {
+            setDateError('Purchase date cannot be in the future.')
+            return
+        }
         setStatus('loading')
         setMessage('')
 
@@ -177,19 +204,48 @@ export default function EditWarranty() {
                             />
                         </div>
 
-                        <div>
-                            <label htmlFor="expiry_date" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                                Expiry Date
-                            </label>
-                            <input
-                                type="date"
-                                id="expiry_date"
-                                name="expiry_date"
-                                required
-                                value={formData.expiry_date}
-                                onChange={handleChange}
-                                className="w-full px-4 py-2 bg-gray-50 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all placeholder-gray-400 dark:placeholder-neutral-500 text-gray-900 dark:text-white"
-                            />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="purchase_date" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                    Purchase Date
+                                </label>
+                                <input
+                                    type="date"
+                                    id="purchase_date"
+                                    name="purchase_date"
+                                    value={formData.purchase_date}
+                                    max={formData.expiry_date ? (formData.expiry_date < todayString ? formData.expiry_date : todayString) : todayString}
+                                    onChange={handleChange}
+                                    className={`w-full px-4 py-2 bg-gray-50 dark:bg-neutral-700 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white ${
+                                        dateError ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-neutral-600'
+                                    }`}
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="expiry_date" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
+                                    Expiry Date
+                                </label>
+                                <input
+                                    type="date"
+                                    id="expiry_date"
+                                    name="expiry_date"
+                                    required
+                                    value={formData.expiry_date}
+                                    min={formData.purchase_date || undefined}
+                                    onChange={handleChange}
+                                    className={`w-full px-4 py-2 bg-gray-50 dark:bg-neutral-700 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white ${
+                                        dateError ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-neutral-600'
+                                    }`}
+                                />
+                            </div>
+                            {dateError && (
+                                <p className="sm:col-span-2 text-xs text-red-500 dark:text-red-400 flex items-center gap-1 -mt-1">
+                                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {dateError}
+                                </p>
+                            )}
                         </div>
 
                         <div>

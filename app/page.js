@@ -25,7 +25,7 @@ export default function Home() {
     })
   }, [warranties, searchQuery, categoryFilter])
 
-  useEffect(() => {
+  useEffect(() => { 
     const checkUserAndFetch = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -82,10 +82,11 @@ export default function Home() {
   }
 
   const getBadgeColor = (days) => {
-    if (days < 0) return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/50'
-    if (days <= 30) return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/50'
-    if (days <= 90) return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/50'
-    return 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/50'
+    if (days < 0) return 'bg-red-600 dark:bg-red-700 text-white'
+    if (days <= 7) return 'bg-orange-600 text-white'
+    if (days <= 30) return 'bg-amber-500 text-white'
+    if (days <= 90) return 'bg-yellow-500 text-white'
+    return 'bg-emerald-600 text-white'
   }
 
   const getBadgeText = (days) => {
@@ -303,7 +304,7 @@ export default function Home() {
                         )}
                         {/* Badge overlay */}
                         <div className="absolute top-2 left-2 flex gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border backdrop-blur-sm shadow-sm ${getBadgeColor(daysLeft)}`}>
+                          <span className={`px-2.5 py-1 rounded text-[10px] font-semibold shadow-sm ${getBadgeColor(daysLeft)}`}>
                             {getBadgeText(daysLeft)}
                           </span>
                         </div>
@@ -336,7 +337,11 @@ export default function Home() {
             )}
           </>
         )}
+
+
       </div>
     </div>
   )
 }
+
+
