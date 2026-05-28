@@ -13,6 +13,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [showToast, setShowToast] = useState(false)
 
   const filteredWarranties = useMemo(() => {
     return warranties.filter((w) => {
@@ -37,6 +38,12 @@ export default function Home() {
     }
 
     checkUserAndFetch()
+
+    // Check if a warranty was just added
+    if (sessionStorage.getItem('warranty_added') === 'true') {
+      sessionStorage.removeItem('warranty_added')
+      setShowToast(true)
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -141,6 +148,23 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white p-4 sm:p-6 md:p-12 transition-colors duration-200">
+
+      {/* ── Success Toast ── */}
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-400 dark:border-green-600 shadow-lg">
+          <span className="text-sm font-semibold text-green-700 dark:text-green-300">Warranty added successfully!</span>
+          <button
+            onClick={() => setShowToast(false)}
+            className="ml-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 md:mb-10 gap-4">
           <div className="text-center md:text-left">

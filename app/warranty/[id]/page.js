@@ -12,6 +12,7 @@ export default function WarrantyDetail() {
     const [warranty, setWarranty] = useState(null)
     const [loading, setLoading] = useState(true)
     const [isPortrait, setIsPortrait] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
     // Notebook / Product Log states
     const [notes, setNotes] = useState([])
@@ -89,8 +90,6 @@ export default function WarrantyDetail() {
     }
 
     const handleDeleteNote = async (noteId) => {
-        if (!confirm('Are you sure you want to delete this note?')) return
-
         try {
             const { error } = await supabase
                 .from('notebook_simulations')
@@ -102,7 +101,6 @@ export default function WarrantyDetail() {
             setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId))
         } catch (error) {
             console.error('Error deleting note:', error.message)
-            alert('Error deleting note: ' + error.message)
         }
     }
 
@@ -152,8 +150,6 @@ export default function WarrantyDetail() {
     }
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to permanently delete this product? This action cannot be undone.')) return
-
         try {
             const filesToRemove = []
             if (warranty?.receipt_url) filesToRemove.push(warranty.receipt_url.split('/').pop())
@@ -176,7 +172,7 @@ export default function WarrantyDetail() {
             router.push('/')
         } catch (error) {
             console.error('Error deleting product:', error.message)
-            alert('Failed to delete product')
+            setShowDeleteConfirm(false)
         }
     }
 
@@ -244,7 +240,33 @@ export default function WarrantyDetail() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white pb-12 transition-colors duration-200">
-            {/* Nav */}
+
+            {/* ── Styled Delete Confirmation Modal ── */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 flex flex-col gap-4">
+                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">Delete Product</h2>
+                        <p className="text-sm text-gray-600 dark:text-neutral-400">
+                            Are you sure you want to permanently delete <span className="font-semibold text-gray-900 dark:text-white">{warranty?.name}</span>? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3 mt-2">
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                className="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-neutral-600 bg-transparent text-gray-700 dark:text-neutral-300 font-semibold text-sm hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors shadow-lg"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="p-4 md:p-6 max-w-6xl mx-auto">
                 <Link href="/" className="inline-flex items-center gap-2 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -326,7 +348,7 @@ export default function WarrantyDetail() {
                                         Edit Product
                                     </Link>
                                     <button
-                                        onClick={handleDelete}
+                                        onClick={() => setShowDeleteConfirm(true)}
                                         className="flex-1 sm:flex-none px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-red-500/25"
                                     >
                                         Delete Product

@@ -250,11 +250,8 @@ export default function AddWarranty() {
             if (productImageUrl) insertData.product_image_url = productImageUrl
             const { error } = await supabase.from('warranties').insert([insertData])
             if (error) throw error
-            setStatus('success')
-            setMessage('Warranty added successfully!')
-            setFormData({ name: '', brand: '', description: '', purchase_date: '', expiry_date: '', category: 'Electronics' })
-            setReceiptFile(null); setProductPhotoFile(null); setScanSuccess(false); setScanError('')
-            setTimeout(() => router.push('/'), 1500)
+            sessionStorage.setItem('warranty_added', 'true')
+            router.push('/')
         } catch (error) {
             setStatus('error')
             setMessage(error.message || 'Failed to add warranty')
@@ -416,9 +413,6 @@ export default function AddWarranty() {
 
                         {status === 'error' && (
                             <p className="text-red-500 dark:text-red-400 text-xs text-center mt-1 shrink-0">{message}</p>
-                        )}
-                        {status === 'success' && (
-                            <p className="text-emerald-500 text-xs text-center font-medium mt-1 shrink-0">{message}</p>
                         )}
                     </form>
                 </div>
