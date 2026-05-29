@@ -609,10 +609,10 @@ export default function WarrantyDetail() {
                     {/* Service Centers */}
                     <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Service Centers</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Service & Claims</h3>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">
-                            Find authorized service centers or contact official support for <span className="font-semibold text-gray-700 dark:text-neutral-200">{warranty.brand || 'this brand'}</span>.
+                            Find authorized service centers or contact official support for <span className="font-semibold text-gray-700 dark:text-neutral-200">{warranty.brand && warranty.brand.trim() !== '' ? warranty.brand : warranty.name}</span>.
                         </p>
                         {(() => {
                             const isHomeService = ['appliances', 'furniture'].includes(warranty.category?.toLowerCase())
@@ -739,7 +739,7 @@ export default function WarrantyDetail() {
 
                             return (
                                 <div className={`mt-5 rounded-xl border p-4 ${accentBorder} ${accentBg}`}>
-                                    <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${accentHeader}`}>
+                                    <p className={`text-sm font-bold uppercase tracking-wider mb-3 ${accentHeader}`}>
                                         📋 {isHomeService ? 'At-Home Preparation Checklist' : 'Before You Go Checklist'}
                                     </p>
                                     <ul className="flex flex-col gap-2">
@@ -788,7 +788,7 @@ export default function WarrantyDetail() {
 
                             return (
                                 <div className="mt-4 rounded-xl border border-amber-400/40 dark:border-amber-500/25 bg-amber-500/10 dark:bg-amber-950/30 p-4">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3">
+                                    <p className="text-sm font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3">
                                         💡 Warranty Vault Tip
                                     </p>
                                     <ul className="flex flex-col gap-2.5">

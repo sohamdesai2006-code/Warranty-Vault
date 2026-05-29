@@ -46,7 +46,7 @@ export default function AddWarranty() {
         description: '',
         purchase_date: '',
         expiry_date: '',
-        category: 'Electronics',
+        category: '',
     })
     const [receiptFile, setReceiptFile] = useState(null)
     const [productPhotoFile, setProductPhotoFile] = useState(null)
@@ -365,8 +365,11 @@ export default function AddWarranty() {
 
                         {/* Category */}
                         <div>
-                            <label htmlFor="category" className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-1">Category</label>
-                            <select id="category" name="category" value={formData.category} onChange={handleChange} className={inputClass}>
+                            <label htmlFor="category" className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-1">
+                                Category <span className="text-red-400">*</span>
+                            </label>
+                            <select id="category" name="category" value={formData.category} onChange={handleChange} required className={inputClass}>
+                                <option value="" disabled selected>Select Category</option>
                                 <option value="Electronics">Electronics</option>
                                 <option value="Appliances">Appliances</option>
                                 <option value="Vehicles">Vehicles</option>
