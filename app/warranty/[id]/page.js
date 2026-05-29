@@ -606,15 +606,199 @@ export default function WarrantyDetail() {
                         </div>
                     </div>
 
-                    {/* Service Centers Placeholder */}
+                    {/* Service Centers */}
                     <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Service Centers</h3>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30">COMING SOON</span>
                         </div>
-                        <div className="bg-gray-50 dark:bg-neutral-900/50 rounded-xl p-6 text-center border border-gray-100 dark:border-neutral-800/50">
-                            <p className="text-gray-500 dark:text-neutral-400 text-sm">Detailed map and contact info for nearby authorized service centers will appear here.</p>
-                        </div>
+                        <p className="text-sm text-gray-500 dark:text-neutral-400 mb-4">
+                            Find authorized service centers or contact official support for <span className="font-semibold text-gray-700 dark:text-neutral-200">{warranty.brand || 'this brand'}</span>.
+                        </p>
+                        {(() => {
+                            const isHomeService = ['appliances', 'furniture'].includes(warranty.category?.toLowerCase())
+                            const searchKeyword = warranty.brand ? warranty.brand : warranty.name
+                            const troubleshootingUrl = isHomeService
+                                ? `https://www.google.com/search?q=${encodeURIComponent(`${searchKeyword} ${warranty.name} common troubleshooting guide fixes`)}`
+                                : `https://www.google.com/search?q=${encodeURIComponent(`${searchKeyword} ${warranty.name} official user manual pdf download`)}`
+                            return (
+                                <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+                                    {/* Book Home Technician — only for Appliances & Furniture */}
+                                    {isHomeService && (
+                                        <a
+                                            href={`https://www.google.com/search?q=${encodeURIComponent(`${searchKeyword} book official home service technician online India`)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm shadow-md hover:shadow-purple-500/30 transition-all active:scale-[0.97]"
+                                        >
+                                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                            </svg>
+                                            Book Home Technician
+                                        </a>
+                                    )}
+                                    {/* Find Nearest Center */}
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${searchKeyword} authorized service center near me`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-md hover:shadow-blue-500/30 transition-all active:scale-[0.97]"
+                                    >
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        Find Nearest Center
+                                    </a>
+                                    {/* Call Official Support */}
+                                    <a
+                                        href={`https://www.google.com/search?q=${encodeURIComponent(`${searchKeyword} official customer care toll free number India`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-neutral-700 hover:bg-neutral-600 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-white font-semibold text-sm shadow-md transition-all active:scale-[0.97]"
+                                    >
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        Call Official Support
+                                    </a>
+                                    {/* Troubleshooting & Manuals */}
+                                    <a
+                                        href={troubleshootingUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-sm shadow-md hover:shadow-amber-500/30 transition-all active:scale-[0.97]"
+                                    >
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                        </svg>
+                                        Troubleshooting &amp; Manuals
+                                    </a>
+                                </div>
+                            )
+                        })()}
+
+                        {/* ── Dynamic Checklist ── */}
+                        {(() => {
+                            const isHomeService = ['appliances', 'furniture'].includes(warranty.category?.toLowerCase())
+                            const isElectronics = warranty.category?.toLowerCase() === 'electronics'
+                            const isVehicle = warranty.category?.toLowerCase() === 'vehicles'
+                            const accentBorder = isHomeService
+                                ? 'border-teal-400/40 dark:border-teal-500/30'
+                                : 'border-blue-400/40 dark:border-blue-500/30'
+                            const accentBg = isHomeService
+                                ? 'bg-teal-50/60 dark:bg-teal-900/10'
+                                : 'bg-blue-50/60 dark:bg-blue-900/10'
+                            const accentHeader = isHomeService
+                                ? 'text-teal-700 dark:text-teal-400'
+                                : 'text-blue-700 dark:text-blue-400'
+
+                            const items = isHomeService
+                                ? [
+                                    {
+                                        key: 'invoice',
+                                        text: <>📄 Keep original <span className="font-semibold">{warranty.brand}</span> Invoice handy</>,
+                                    },
+                                    {
+                                        key: 'id',
+                                        text: <>🪪 Keep a valid Government ID ready <span className="text-gray-500 dark:text-neutral-400 text-xs">(Aadhaar / PAN)</span> for technician verification</>,
+                                    },
+                                    {
+                                        key: 'space',
+                                        text: <>🧹 Clear the physical space around your <span className="font-semibold">{warranty.name}</span> so the technician has easy access</>,
+                                    },
+                                ]
+                                : [
+                                    {
+                                        key: 'invoice',
+                                        text: <>📄 Keep original <span className="font-semibold">{warranty.brand}</span> Invoice handy</>,
+                                    },
+                                    {
+                                        key: 'id',
+                                        text: <>🪪 Keep a valid Government ID ready <span className="text-gray-500 dark:text-neutral-400 text-xs">(Aadhaar / PAN)</span></>,
+                                    },
+                                    {
+                                        key: 'accessories',
+                                        text: isVehicle
+                                            ? <>🔑 Remember to carry all physical vehicle keys, original registration certificate <span className="text-gray-500 dark:text-neutral-400 text-xs">(RC)</span>, and insurance documents</>
+                                            : <>🔌 Remember to pack the main unit along with all original stock accessories <span className="text-gray-500 dark:text-neutral-400 text-xs">(chargers, cables)</span></>,
+                                    },
+                                    ...(isElectronics
+                                        ? [{ key: 'backup', text: <>🛡️ Backup critical personal data before handing over the device</> }]
+                                        : []),
+                                ]
+
+                            return (
+                                <div className={`mt-5 rounded-xl border p-4 ${accentBorder} ${accentBg}`}>
+                                    <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${accentHeader}`}>
+                                        📋 {isHomeService ? 'At-Home Preparation Checklist' : 'Before You Go Checklist'}
+                                    </p>
+                                    <ul className="flex flex-col gap-2">
+                                        {items.map((item) => (
+                                            <li key={item.key} className="flex items-start gap-2 text-sm text-gray-700 dark:text-neutral-300 leading-snug">
+                                                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-current shrink-0 opacity-50 mt-1.5" />
+                                                <span>
+                                                    {item.text}
+                                                    {item.key === 'invoice' && receiptUrl && (
+                                                        <a
+                                                            href={receiptUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors"
+                                                        >
+                                                            👁️ View Uploaded Bill
+                                                        </a>
+                                                    )}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )
+                        })()}
+
+                        {/* ── Consumer Tip Box ── */}
+                        {(() => {
+                            const isHomeService = ['appliances', 'furniture'].includes(warranty.category?.toLowerCase())
+                            const isVehicle = warranty.category?.toLowerCase() === 'vehicles'
+
+                            const tips = isHomeService
+                                ? [
+                                    "No Inspection Fees: Authorized technicians cannot charge a visiting/inspection fee if your item is under an active manufacturing warranty.",
+                                    "Check ID: Always verify the technician's official company ID card before letting them enter your home.",
+                                ]
+                                : isVehicle
+                                ? [
+                                    "Demand a Job Card: Never leave your vehicle without an official printed Job Card detailing the reported problems and current fuel/kilometer readings.",
+                                    "Remove Belongings: Remember to remove your personal belongings from the boot, glovebox, or side-pockets before handing over keys.",
+                                ]
+                                : [
+                                    "Demand a Job Sheet: Never leave your device at a center without an official printed acknowledgment receipt detailing your device's exact physical condition.",
+                                    "Remove Storage: Remember to eject your SIM cards, SD cards, and log out of sensitive accounts before handing over your device.",
+                                ]
+
+                            return (
+                                <div className="mt-4 rounded-xl border border-amber-400/40 dark:border-amber-500/25 bg-amber-50/60 dark:bg-amber-900/10 p-4">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3">
+                                        💡 Warranty Vault Tip
+                                    </p>
+                                    <ul className="flex flex-col gap-2.5">
+                                        {tips.map((tip, i) => {
+                                            const [label, ...rest] = tip.split(':')
+                                            const body = rest.join(':').trim()
+                                            return (
+                                                <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-neutral-300 leading-snug">
+                                                    <span className="shrink-0 mt-1 w-1.5 h-1.5 rounded-full bg-amber-500 opacity-70" />
+                                                    <span>
+                                                        <span className="font-semibold text-amber-700 dark:text-amber-300">{label}:</span>
+                                                        {' '}{body}
+                                                    </span>
+                                                </li>
+                                            )
+                                        })}
+                                    </ul>
+                                </div>
+                            )
+                        })()}
                     </div>
 
                 </div>
