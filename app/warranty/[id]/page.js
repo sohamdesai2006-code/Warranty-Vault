@@ -696,34 +696,44 @@ export default function WarrantyDetail() {
                                 ? [
                                     {
                                         key: 'invoice',
-                                        text: <>📄 Keep original <span className="font-semibold">{warranty.brand}</span> Invoice handy</>,
+                                        icon: '📄',
+                                        text: <>Keep original <span className="font-semibold">{warranty.brand}</span> Invoice handy</>,
                                     },
                                     {
                                         key: 'id',
-                                        text: <>🪪 Keep a valid Government ID ready <span className="text-gray-500 dark:text-neutral-400 text-xs">(Aadhaar / PAN)</span> for technician verification</>,
+                                        icon: '🪪',
+                                        text: <>Keep a valid Government ID ready <span className="text-gray-500 dark:text-neutral-400 text-xs">(Aadhaar / PAN)</span> for technician verification</>,
                                     },
                                     {
                                         key: 'space',
-                                        text: <>🧹 Clear the physical space around your <span className="font-semibold">{warranty.name}</span> so the technician has easy access</>,
+                                        icon: '🧹',
+                                        text: <>Clear the physical space around your <span className="font-semibold">{warranty.name}</span> so the technician has easy access</>,
                                     },
                                 ]
                                 : [
                                     {
                                         key: 'invoice',
-                                        text: <>📄 Keep original <span className="font-semibold">{warranty.brand}</span> Invoice handy</>,
+                                        icon: '📄',
+                                        text: <>Keep original <span className="font-semibold">{warranty.brand}</span> Invoice handy</>,
                                     },
                                     {
                                         key: 'id',
-                                        text: <>🪪 Keep a valid Government ID ready <span className="text-gray-500 dark:text-neutral-400 text-xs">(Aadhaar / PAN)</span></>,
+                                        icon: '🪪',
+                                        text: <>Keep a valid Government ID ready <span className="text-gray-500 dark:text-neutral-400 text-xs">(Aadhaar / PAN)</span></>,
                                     },
                                     {
                                         key: 'accessories',
+                                        icon: isVehicle ? '🔑' : '🔌',
                                         text: isVehicle
-                                            ? <>🔑 Remember to carry all physical vehicle keys, original registration certificate <span className="text-gray-500 dark:text-neutral-400 text-xs">(RC)</span>, and insurance documents</>
-                                            : <>🔌 Remember to pack the main unit along with all original stock accessories <span className="text-gray-500 dark:text-neutral-400 text-xs">(chargers, cables)</span></>,
+                                            ? <>Remember to carry all physical vehicle keys, original registration certificate <span className="text-gray-500 dark:text-neutral-400 text-xs">(RC)</span>, and insurance documents</>
+                                            : <>Remember to pack the main unit along with all original stock accessories <span className="text-gray-500 dark:text-neutral-400 text-xs">(chargers, cables)</span></>,
                                     },
                                     ...(isElectronics
-                                        ? [{ key: 'backup', text: <>🛡️ Backup critical personal data before handing over the device</> }]
+                                        ? [{
+                                            key: 'backup',
+                                            icon: '🛡️',
+                                            text: <>Backup critical personal data before handing over the device</>
+                                        }]
                                         : []),
                                 ]
 
@@ -735,7 +745,7 @@ export default function WarrantyDetail() {
                                     <ul className="flex flex-col gap-2">
                                         {items.map((item) => (
                                             <li key={item.key} className="flex items-start gap-2 text-sm text-gray-700 dark:text-neutral-300 leading-snug">
-                                                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-current shrink-0 opacity-50 mt-1.5" />
+                                                <span className="shrink-0 text-base select-none mt-0.5">{item.icon}</span>
                                                 <span>
                                                     {item.text}
                                                     {item.key === 'invoice' && receiptUrl && (
@@ -777,7 +787,7 @@ export default function WarrantyDetail() {
                                 ]
 
                             return (
-                                <div className="mt-4 rounded-xl border border-amber-400/40 dark:border-amber-500/25 bg-amber-50/60 dark:bg-amber-900/10 p-4">
+                                <div className="mt-4 rounded-xl border border-amber-400/40 dark:border-amber-500/25 bg-amber-500/10 dark:bg-amber-950/30 p-4">
                                     <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3">
                                         💡 Warranty Vault Tip
                                     </p>
