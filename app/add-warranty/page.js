@@ -369,7 +369,7 @@ export default function AddWarranty() {
                                 Category <span className="text-red-400">*</span>
                             </label>
                             <select id="category" name="category" value={formData.category} onChange={handleChange} required className={inputClass}>
-                                <option value="" disabled selected>Select Category</option>
+                                <option value="" disabled>Select Category</option>
                                 <option value="Electronics">Electronics</option>
                                 <option value="Appliances">Appliances</option>
                                 <option value="Vehicles">Vehicles</option>
