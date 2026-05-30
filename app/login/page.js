@@ -30,19 +30,27 @@ export default function Login() {
     }
 
     return (
-        <div className="h-screen bg-white dark:bg-neutral-900 flex flex-col items-center justify-center p-6 overflow-hidden transition-colors duration-200">
-            <div className="max-w-4xl w-full text-center px-4">
-                {/* Branding Icon */}
+        <div className="h-screen bg-white dark:bg-neutral-900 flex flex-col items-center justify-between pt-2 pb-6 px-4 md:px-6 overflow-hidden transition-colors duration-200">
+            <div className="max-w-4xl w-full text-center px-4 flex flex-col items-center flex-1 justify-center">
+                {/* Branding Stack */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="mb-10 flex justify-center"
+                    className="mb-5 flex flex-col items-center gap-2"
                 >
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl shadow-xl flex items-center justify-center text-white transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
+                    <img 
+                      src="/logo.png" 
+                      alt="Warranty Vault Logo" 
+                      className="h-44 sm:h-52 w-auto object-contain" 
+                    />
+                    <div className="text-center">
+                        <h2 className="text-xl sm:text-2xl font-semibold tracking-widest bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]">
+                            Warranty Vault
+                        </h2>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-neutral-400 tracking-widest mt-0.5">
+                            Secure | Protection
+                        </p>
                     </div>
                 </motion.div>
 
@@ -50,7 +58,7 @@ export default function Login() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent italic"
+                    className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 tracking-tight leading-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent italic"
                 >
                     Don't let your warranty expire in silence.
                 </motion.h1>
@@ -59,7 +67,7 @@ export default function Login() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
-                    className="text-xl md:text-2xl text-gray-500 dark:text-neutral-400 mb-12 max-w-2xl mx-auto font-medium leading-relaxed"
+                    className="text-sm sm:text-base md:text-lg text-gray-500 dark:text-neutral-400 mb-6 max-w-2xl mx-auto font-medium leading-relaxed"
                 >
                     We give your receipts a voice. Get alerted before your protection runs out.
                 </motion.p>
@@ -74,17 +82,17 @@ export default function Login() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleLogin}
-                        className="group relative flex items-center justify-center gap-4 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white font-bold py-5 px-10 rounded-2xl border-2 border-gray-400 dark:border-gray-700 hover:border-gray-600 dark:hover:border-gray-500 transition-all shadow-sm hover:shadow-md active:scale-95"
+                        className="group relative flex items-center justify-center gap-3 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white font-bold py-3.5 px-8 rounded-xl border-2 border-gray-400 dark:border-gray-700 hover:border-gray-600 dark:hover:border-gray-500 transition-all shadow-sm hover:shadow-md active:scale-95"
                     >
                         <img
                             src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                             alt="Google"
-                            className="w-6 h-6 group-hover:rotate-12 transition-transform"
+                            className="w-5 h-5 group-hover:rotate-12 transition-transform"
                         />
-                        <span className="text-xl">Continue with Google</span>
+                        <span className="text-lg">Continue with Google</span>
 
                         {/* Subtle Glow Effect on Hover */}
-                        <div className="absolute inset-0 rounded-2xl bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                        <div className="absolute inset-0 rounded-xl bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                     </motion.button>
 
                     <p className="mt-3 text-sm text-gray-500 dark:text-neutral-500 font-medium tracking-wide">
@@ -110,7 +118,15 @@ export default function Login() {
                             </li>
                             <li className="flex items-start gap-3">
                                 <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-600 shrink-0"></div>
-                                <p className="text-gray-600 dark:text-neutral-400 font-medium">We provide automated expiry alerts to ensure you never miss a claim deadline.</p>
+                                <p className="text-gray-600 dark:text-neutral-400 font-medium">You retain complete control to add, update, or permanently delete your data at any time.</p>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-600 shrink-0"></div>
+                                <p className="text-gray-600 dark:text-neutral-400 font-medium">We do not guarantee the validity of a manufacturer's warranty claim based on the records stored here.</p>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-600 shrink-0"></div>
+                                <p className="text-gray-600 dark:text-neutral-400 font-medium">You agree to upload only authentic document files related to your actual product warranties.</p>
                             </li>
                         </ul>
 
