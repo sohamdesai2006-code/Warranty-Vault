@@ -124,17 +124,17 @@ export default function Settings() {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white pb-12 transition-colors duration-200">
             {/* Nav */}
-            <div className="p-4 md:p-6 max-w-4xl mx-auto">
-                <Link href="/" className="inline-flex items-center gap-2 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6">
+            <div className="max-w-4xl mx-auto px-4 md:px-6 pt-6 pb-2">
+                <Link href="/" className="inline-flex items-center gap-2 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-3">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     Back to Dashboard
                 </Link>
-                <h1 className="text-3xl font-bold mb-8">Settings</h1>
+                <h1 className="text-3xl font-bold">Settings</h1>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 md:px-6 flex flex-col gap-6">
+            <div className="max-w-4xl mx-auto px-4 md:px-6 flex flex-col gap-6 mt-2">
 
                 {/* Profile Info */}
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">

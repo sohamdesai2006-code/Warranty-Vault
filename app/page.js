@@ -168,9 +168,11 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 md:mb-10 gap-4">
           <div className="text-center md:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">
-              Warranty Vault
-            </h1>
+            <img 
+              src="/logo.png" 
+              alt="Warranty Vault Logo" 
+              className="h-20 sm:h-24 w-auto object-contain mx-auto md:mx-0" 
+            />
             <p className="text-gray-500 dark:text-neutral-400 mt-1 text-sm sm:text-base font-medium transition-all">
               {user?.user_metadata?.full_name
                 ? `Welcome back, ${formatName(user.user_metadata.full_name)}!`
@@ -178,7 +180,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 md:self-end md:mb-1">
             <button
               onClick={() => handleTestEmail(warranties[0]?.name || 'Test Product')}
               disabled={sendingEmail}
