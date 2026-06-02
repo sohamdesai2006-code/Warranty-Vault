@@ -199,6 +199,16 @@ export default function Home() {
               </button>
             )}
 
+            <Link
+              href="/add-warranty"
+              className="hidden md:flex items-center justify-center gap-2 h-11 px-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-semibold shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 text-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Add New
+            </Link>
+
             {user ? (
               <Link
                 href="/settings"
@@ -218,16 +228,6 @@ export default function Home() {
                 Login
               </Link>
             )}
-
-            <Link
-              href="/add-warranty"
-              className="hidden md:flex items-center justify-center gap-2 h-11 px-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-semibold shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 text-sm"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
-              </svg>
-              Add New
-            </Link>
           </div>
         </div>
 
