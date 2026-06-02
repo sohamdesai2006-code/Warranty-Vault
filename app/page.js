@@ -112,6 +112,11 @@ export default function Home() {
   }
 
   const handleTestEmail = async () => {
+    const emailEnabled = localStorage.getItem('emailNotifications')
+    if (emailEnabled !== null && emailEnabled === 'false') {
+      alert('Cannot send test email while notifications are disabled.')
+      return
+    }
     setSendingEmail(true)
     try {
       // Get the user's current session token to authenticate the API call
