@@ -215,6 +215,7 @@ export default function Settings() {
                                 )}
                             </button>
                         </div>
+                        {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-neutral-700/50">
                             <div>
                                 <p className="font-medium">Test Distribution</p>
@@ -228,6 +229,7 @@ export default function Settings() {
                                 {sendingEmail ? 'Sending...' : 'Test Email'}
                             </button>
                         </div>
+                        )}
                     </div>
                 </div>
 

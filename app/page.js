@@ -186,16 +186,18 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-3 md:self-end md:mb-1">
-            <button
-              onClick={() => handleTestEmail(warranties[0]?.name || 'Test Product')}
-              disabled={sendingEmail}
-              className={`flex items-center justify-center h-11 px-5 rounded-xl font-semibold shadow-md transition-all active:scale-95 text-sm ${sendingEmail
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                }`}
-            >
-              {sendingEmail ? 'Sending...' : 'Test Email'}
-            </button>
+            {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
+              <button
+                onClick={() => handleTestEmail(warranties[0]?.name || 'Test Product')}
+                disabled={sendingEmail}
+                className={`flex items-center justify-center h-11 px-5 rounded-xl font-semibold shadow-md transition-all active:scale-95 text-sm ${sendingEmail
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                  }`}
+              >
+                {sendingEmail ? 'Sending...' : 'Test Email'}
+              </button>
+            )}
 
             {user ? (
               <Link
