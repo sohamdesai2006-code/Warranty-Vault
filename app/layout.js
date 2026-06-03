@@ -17,6 +17,8 @@ export const metadata = {
 };
 
 import { ThemeProvider } from "./theme-provider";
+import SessionGuard from "./session-guard";
+import VaultLock from "./vault-lock";
 
 export default function RootLayout({ children }) {
   return (
@@ -25,6 +27,8 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider />
+        <SessionGuard />
+        <VaultLock />
         {children}
       </body>
     </html>

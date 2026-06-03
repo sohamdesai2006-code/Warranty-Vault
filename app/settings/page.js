@@ -18,6 +18,23 @@ export default function Settings() {
         return true
     })
     const [sendingEmail, setSendingEmail] = useState(false)
+    const [sessionDuration, setSessionDuration] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('sessionDuration') || '7'
+        }
+        return '7'
+    })
+    const [vaultLockEnabled, setVaultLockEnabled] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('vaultLockEnabled') === 'true'
+        }
+        return false
+    })
+    const [showPinSetup, setShowPinSetup] = useState(false)
+    const [pinSetupStep, setPinSetupStep] = useState('enter') // 'enter' | 'confirm'
+    const [pinSetupInput, setPinSetupInput] = useState('')
+    const [pinSetupConfirm, setPinSetupConfirm] = useState('')
+    const [pinSetupError, setPinSetupError] = useState('')
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -63,6 +80,67 @@ export default function Settings() {
             document.documentElement.classList.remove('dark')
             localStorage.setItem('theme', 'light')
         }
+    }
+
+    // SHA-256 PIN hashing via Web Crypto API
+    const hashPin = async (pin) => {
+        const encoder = new TextEncoder()
+        const data = encoder.encode(pin + 'wv_salt_2024')
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+        return Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, '0')).join('')
+    }
+
+    const handleVaultLockToggle = async () => {
+        if (!vaultLockEnabled) {
+            // Turning ON — check if PIN already exists
+            const existingPin = localStorage.getItem('vaultPinHash')
+            if (existingPin) {
+                setVaultLockEnabled(true)
+                localStorage.setItem('vaultLockEnabled', 'true')
+            } else {
+                // Need to set up a new PIN first
+                setPinSetupStep('enter')
+                setPinSetupInput('')
+                setPinSetupConfirm('')
+                setPinSetupError('')
+                setShowPinSetup(true)
+            }
+        } else {
+            // Turning OFF — disable and clear stored PIN
+            setVaultLockEnabled(false)
+            localStorage.setItem('vaultLockEnabled', 'false')
+            localStorage.removeItem('vaultPinHash')
+        }
+    }
+
+    const handlePinSetupNext = async () => {
+        if (!/^\d{4}$/.test(pinSetupInput)) {
+            setPinSetupError('Please enter exactly 4 digits.')
+            return
+        }
+        if (pinSetupStep === 'enter') {
+            setPinSetupStep('confirm')
+            setPinSetupError('')
+            return
+        }
+        // Confirm step
+        if (pinSetupInput !== pinSetupConfirm) {
+            setPinSetupError('PINs do not match. Please try again.')
+            setPinSetupStep('enter')
+            setPinSetupInput('')
+            setPinSetupConfirm('')
+            return
+        }
+        const hash = await hashPin(pinSetupInput)
+        localStorage.setItem('vaultPinHash', hash)
+        localStorage.setItem('vaultLockEnabled', 'true')
+        setVaultLockEnabled(true)
+        setShowPinSetup(false)
+        setPinSetupInput('')
+        setPinSetupConfirm('')
+        setPinSetupStep('enter')
+        setPinSetupError('')
     }
 
     const handleLogout = async () => {
@@ -132,6 +210,7 @@ export default function Settings() {
     }
 
     return (
+        <>
         <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white pb-12 transition-colors duration-200">
             {/* Nav */}
             <div className="max-w-4xl mx-auto px-4 md:px-6 pt-6 pb-2">
@@ -178,6 +257,56 @@ export default function Settings() {
                         </div>
                         <div className="flex items-center justify-between">
                             <div>
+                                <p className="font-medium">Session Duration</p>
+                                <p className="text-sm text-gray-500 dark:text-neutral-400">Keep me logged in for...</p>
+                            </div>
+                            <select
+                                value={sessionDuration}
+                                onChange={(e) => {
+                                    setSessionDuration(e.target.value)
+                                    localStorage.setItem('sessionDuration', e.target.value)
+                                }}
+                                className="h-9 px-3 pr-8 rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-neutral-100 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors cursor-pointer"
+                            >
+                                <option value="1">1 day</option>
+                                <option value="7">7 days</option>
+                                <option value="30">30 days</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="flex items-center gap-1.5">
+                                    <p className="font-medium">Auto-Lock on Tab Switch</p>
+                                    <div className="relative group flex items-center">
+                                        <button 
+                                            type="button"
+                                            className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors focus:outline-none"
+                                            aria-label="More information"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="M12 16v-4" />
+                                                <path d="M12 8h.01" />
+                                            </svg>
+                                        </button>
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 dark:bg-neutral-800 text-white text-xs rounded-xl shadow-xl border border-gray-800 dark:border-neutral-700 pointer-events-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left leading-relaxed font-normal">
+                                            This security PIN works only on the device and browser where it was created. If you forget your PIN and choose to log out, the local security PIN will be deleted and this feature will be turned off automatically.
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 dark:bg-neutral-800 rotate-45 border-r border-b border-gray-800 dark:border-neutral-700"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-gray-500 dark:text-neutral-400">Lock vault when clicking away</p>
+                            </div>
+                            <button
+                                onClick={handleVaultLockToggle}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors ${vaultLockEnabled ? 'bg-purple-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
+                            >
+                                <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${vaultLockEnabled ? 'translate-x-6' : ''}`}></div>
+                            </button>
+                        </div>
+                        {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
+                        <div className="flex items-center justify-between">
+                            <div>
                                 <p className="font-medium">Email Notifications</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Receive warranty expiration alerts</p>
                             </div>
@@ -215,6 +344,7 @@ export default function Settings() {
                                 )}
                             </button>
                         </div>
+                        )}
                         {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-neutral-700/50">
                             <div>
@@ -266,5 +396,67 @@ export default function Settings() {
 
             </div>
         </div>
+
+        {/* PIN Setup Modal */}
+        {showPinSetup && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40 animate-in fade-in duration-200">
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-neutral-800 p-8 w-full max-w-sm mx-4 flex flex-col gap-5">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900 dark:text-white">Set Vault PIN</h3>
+                            <p className="text-xs text-gray-500 dark:text-neutral-400">
+                                {pinSetupStep === 'enter' ? 'Choose a 4-digit PIN' : 'Confirm your PIN'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-neutral-300">
+                            {pinSetupStep === 'enter' ? 'Enter PIN' : 'Confirm PIN'}
+                        </label>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={4}
+                            placeholder="••••"
+                            value={pinSetupStep === 'enter' ? pinSetupInput : pinSetupConfirm}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 4)
+                                pinSetupStep === 'enter' ? setPinSetupInput(val) : setPinSetupConfirm(val)
+                                setPinSetupError('')
+                            }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handlePinSetupNext() }}
+                            autoFocus
+                            className="h-11 px-4 rounded-xl border border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white text-center tracking-[0.5em] text-lg font-mono focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                        />
+                        {pinSetupError && (
+                            <p className="text-red-500 text-xs font-medium">{pinSetupError}</p>
+                        )}
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => { setShowPinSetup(false); setPinSetupInput(''); setPinSetupConfirm(''); setPinSetupStep('enter'); setPinSetupError('') }}
+                            className="flex-1 h-10 rounded-xl border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-neutral-300 text-sm font-medium hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handlePinSetupNext}
+                            className="flex-1 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold transition-colors active:scale-95"
+                        >
+                            {pinSetupStep === 'enter' ? 'Next →' : 'Enable Lock'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     )
 }

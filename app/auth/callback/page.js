@@ -11,6 +11,7 @@ export default function AuthCallback() {
         // Check if session exists or listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_IN' || session) {
+                localStorage.setItem('session_start_time', Date.now().toString())
                 router.push('/')
             }
         })
