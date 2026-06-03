@@ -5,6 +5,38 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+// Hoisted Helper/Utility Functions to prevent TDZ issues during render initialization
+const getDaysRemaining = (expiryDate) => {
+  const today = new Date()
+  const expiry = new Date(expiryDate)
+  const diffTime = expiry - today
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays
+}
+
+const getBadgeColor = (days) => {
+  if (days < 0) return 'bg-red-600 dark:bg-red-700 text-white'
+  if (days <= 7) return 'bg-orange-600 text-white'
+  if (days <= 30) return 'bg-amber-500 text-white'
+  if (days <= 90) return 'bg-yellow-500 text-white'
+  return 'bg-emerald-600 text-white'
+}
+
+const getBadgeText = (days) => {
+  if (days < 0) return 'Expired'
+  if (days === 0) return 'Expires Today'
+  return `${days} Days Left`
+}
+
+const formatName = (name) => {
+  if (!name) return ''
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 export default function Home() {
   const router = useRouter()
   const [warranties, setWarranties] = useState([])
@@ -14,6 +46,8 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [sendingEmail, setSendingEmail] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [autoArchiveExpired, setAutoArchiveExpired] = useState(false)
+  const [currentView, setCurrentView] = useState('active') // 'active' | 'expired'
 
   const filteredWarranties = useMemo(() => {
     return warranties.filter((w) => {
@@ -22,11 +56,27 @@ export default function Home() {
         (w.name && w.name.toLowerCase().includes(query)) ||
         (w.brand && w.brand.toLowerCase().includes(query))
       const matchesCategory = categoryFilter === 'All' || w.category === categoryFilter
-      return matchesSearch && matchesCategory
+      if (!matchesSearch || !matchesCategory) return false
+
+      if (autoArchiveExpired) {
+        const days = getDaysRemaining(w.expiry_date)
+        const isExpired = days < 0
+        if (currentView === 'active') {
+          return !isExpired
+        } else {
+          return isExpired
+        }
+      }
+
+      return true
     })
-  }, [warranties, searchQuery, categoryFilter])
+  }, [warranties, searchQuery, categoryFilter, autoArchiveExpired, currentView])
 
   useEffect(() => { 
+    if (typeof window !== 'undefined') {
+      setAutoArchiveExpired(localStorage.getItem('autoArchiveExpired') === 'true')
+    }
+
     const checkUserAndFetch = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -80,36 +130,7 @@ export default function Home() {
     }
   }
 
-  const getDaysRemaining = (expiryDate) => {
-    const today = new Date()
-    const expiry = new Date(expiryDate)
-    const diffTime = expiry - today
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
 
-  const getBadgeColor = (days) => {
-    if (days < 0) return 'bg-red-600 dark:bg-red-700 text-white'
-    if (days <= 7) return 'bg-orange-600 text-white'
-    if (days <= 30) return 'bg-amber-500 text-white'
-    if (days <= 90) return 'bg-yellow-500 text-white'
-    return 'bg-emerald-600 text-white'
-  }
-
-  const getBadgeText = (days) => {
-    if (days < 0) return 'Expired'
-    if (days === 0) return 'Expires Today'
-    return `${days} Days Left`
-  }
-
-  const formatName = (name) => {
-    if (!name) return ''
-    return name
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-  }
 
   const handleTestEmail = async () => {
     const emailEnabled = localStorage.getItem('emailNotifications')
@@ -265,6 +286,30 @@ export default function Home() {
           </div>
         ) : (
           <>
+            {autoArchiveExpired && (
+              <div className="flex gap-2 mb-6 bg-gray-100 dark:bg-neutral-800/80 p-1.5 rounded-2xl w-fit shadow-inner transition-colors duration-200">
+                <button
+                  onClick={() => setCurrentView('active')}
+                  className={`px-5 py-2 text-sm font-bold rounded-xl transition-all duration-200 ${
+                    currentView === 'active'
+                      ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-md'
+                      : 'text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Active
+                </button>
+                <button
+                  onClick={() => setCurrentView('expired')}
+                  className={`px-5 py-2 text-sm font-bold rounded-xl transition-all duration-200 ${
+                    currentView === 'expired'
+                      ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-md'
+                      : 'text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Archive
+                </button>
+              </div>
+            )}
             <div className="flex flex-col md:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
               <div className="relative flex-1">
                 <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,8 +350,21 @@ export default function Home() {
                 <svg className="w-12 h-12 text-gray-400 dark:text-neutral-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
-                <h3 className="text-lg font-semibold text-gray-700 dark:text-neutral-300 mb-1">No warranties found</h3>
-                <p className="text-gray-500 dark:text-neutral-500 text-sm">No warranties match your search. Try a different term or category.</p>
+                <h3 className="text-lg font-semibold text-gray-700 dark:text-neutral-300 mb-1">
+                  {autoArchiveExpired 
+                    ? (currentView === 'active' ? 'No active warranties found' : 'No archived warranties found')
+                    : 'No warranties found'
+                  }
+                </h3>
+                <p className="text-gray-500 dark:text-neutral-500 text-sm">
+                  {searchQuery || categoryFilter !== 'All' 
+                    ? 'No warranties match your search. Try a different term or category.'
+                    : (autoArchiveExpired
+                        ? (currentView === 'active' ? 'You have no active warranties at the moment.' : 'You have no archived/expired warranties yet.')
+                        : 'No warranties found.'
+                      )
+                  }
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">

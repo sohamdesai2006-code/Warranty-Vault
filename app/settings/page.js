@@ -30,6 +30,12 @@ export default function Settings() {
         }
         return false
     })
+    const [autoArchiveExpired, setAutoArchiveExpired] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('autoArchiveExpired') === 'true'
+        }
+        return false
+    })
     const [showPinSetup, setShowPinSetup] = useState(false)
     const [pinSetupStep, setPinSetupStep] = useState('enter') // 'enter' | 'confirm'
     const [pinSetupInput, setPinSetupInput] = useState('')
@@ -112,6 +118,12 @@ export default function Settings() {
             localStorage.setItem('vaultLockEnabled', 'false')
             localStorage.removeItem('vaultPinHash')
         }
+    }
+
+    const handleAutoArchiveToggle = () => {
+        const newValue = !autoArchiveExpired
+        setAutoArchiveExpired(newValue)
+        localStorage.setItem('autoArchiveExpired', String(newValue))
     }
 
     const handlePinSetupNext = async () => {
@@ -302,6 +314,18 @@ export default function Settings() {
                                 className={`w-12 h-6 rounded-full p-1 transition-colors ${vaultLockEnabled ? 'bg-purple-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
                             >
                                 <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${vaultLockEnabled ? 'translate-x-6' : ''}`}></div>
+                            </button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="font-medium">Auto-archive expired warranties</p>
+                                <p className="text-sm text-gray-500 dark:text-neutral-400">Archive expired items automatically</p>
+                            </div>
+                            <button
+                                onClick={handleAutoArchiveToggle}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors ${autoArchiveExpired ? 'bg-purple-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
+                            >
+                                <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${autoArchiveExpired ? 'translate-x-6' : ''}`}></div>
                             </button>
                         </div>
                         {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
