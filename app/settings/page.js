@@ -318,7 +318,26 @@ export default function Settings() {
                         </div>
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">Auto-archive expired warranties</p>
+                                <div className="flex items-center gap-1.5">
+                                    <p className="font-medium">Auto-archive expired warranties</p>
+                                    <div className="relative group flex items-center">
+                                        <button 
+                                            type="button"
+                                            className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors focus:outline-none"
+                                            aria-label="More information"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="M12 16v-4" />
+                                                <path d="M12 8h.01" />
+                                            </svg>
+                                        </button>
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 dark:bg-neutral-800 text-white text-xs rounded-xl shadow-xl border border-gray-800 dark:border-neutral-700 pointer-events-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left leading-relaxed font-normal">
+                                            When enabled, expired products will be automatically moved from your main dashboard view into a separate Archive tab so your main list stays uncluttered.
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2.5 h-2.5 bg-gray-900 dark:bg-neutral-800 rotate-45 border-r border-b border-gray-800 dark:border-neutral-700"></div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Archive expired items automatically</p>
                             </div>
                             <button
@@ -384,6 +403,39 @@ export default function Settings() {
                             </button>
                         </div>
                         )}
+
+                        {/* Option 7: Chatbot Preview Card */}
+                        <div className="mt-2 p-5 rounded-xl bg-purple-100 bg-gradient-to-br from-purple-200/90 to-indigo-100 dark:bg-purple-950/10 dark:bg-gradient-to-br dark:from-purple-950/20 dark:to-indigo-950/20 border border-purple-300/80 dark:border-purple-500/10 backdrop-blur-sm shadow-sm shadow-purple-500/5 opacity-75 select-none transition-colors duration-200">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex items-center justify-center w-9 h-9">
+                                        <span className="absolute inline-flex h-9 w-9 rounded-full bg-indigo-400/40 dark:bg-indigo-400/30 animate-ping"></span>
+                                        <svg className="relative w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                            <path d="M12 8V4H8" />
+                                            <rect width="16" height="12" x="4" y="8" rx="2" />
+                                            <path d="M2 14h2" />
+                                            <path d="M20 14h2" />
+                                            <path d="M15 13v2" />
+                                            <path d="M9 13v2" />
+                                        </svg>
+                                    </div>
+                                    <span className="font-bold text-gray-800 dark:text-neutral-200 text-sm sm:text-base">AI Warranty Assistant</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase bg-purple-50 text-purple-700 border border-purple-400/60 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800/50 rounded-md">
+                                        Coming Soon
+                                    </span>
+                                </div>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
+                                Unlock the power of your own personal AI assistant. Soon you'll be able to chat with your vault to instantly look up warranty policies, ask about upcoming expiration dates, and get smart alerts using plain text.
+                            </p>
+                            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 dark:text-neutral-500 border-t border-gray-100 dark:border-neutral-800/60 pt-2.5">
+                                <svg className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                <span>Feature locked — coming soon to your vault.</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
