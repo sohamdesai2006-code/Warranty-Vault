@@ -261,13 +261,13 @@ export default function AddWarranty() {
     const inputClass = "w-full px-3 py-2 bg-gray-50 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-500 text-sm"
 
     return (
-        <div className="h-screen max-h-screen overflow-hidden flex flex-col pt-1.5 pb-3 px-4 md:px-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-200" style={{contain:'strict'}}>
+        <div className="min-h-screen lg:h-screen lg:max-h-screen overflow-y-auto lg:overflow-hidden flex flex-col pt-1.5 pb-3 px-4 md:px-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-200">
             <canvas ref={canvasRef} className="hidden" />
 
             {/* ── Center-Aligned Content Container ── */}
-            <div className="w-full max-w-5xl mx-auto px-4 mt-1 flex-1 min-h-0 overflow-hidden flex flex-col">
+            <div className="w-full max-w-5xl mx-auto px-4 mt-1 flex-1 min-h-0 lg:overflow-hidden flex flex-col">
                 {/* ── Header Row (Left-aligned with Left Card) ── */}
-                <div className="shrink-0 flex items-center justify-between mb-2 w-full">
+                <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between mb-2 w-full gap-2">
                     <div>
                         <Link href="/" className="text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white text-sm inline-flex items-center gap-1 transition-colors mb-0.5 font-medium">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,11 +302,11 @@ export default function AddWarranty() {
                 </div>
 
                 {/* ── Main grid ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch flex-1 min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch flex-1 min-h-0 lg:overflow-hidden pb-4">
 
                 {/* LEFT: form card */}
-                <div className="bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col justify-between h-full min-h-0 shadow-sm dark:shadow-none transition-colors duration-200">
-                    <form onSubmit={handleSubmit} className="flex flex-col h-full justify-between min-h-0">
+                <div className="bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 flex flex-col justify-between lg:h-full min-h-0 shadow-sm dark:shadow-none transition-colors duration-200">
+                    <form onSubmit={handleSubmit} className="flex flex-col lg:h-full justify-between min-h-0">
                         <div className="flex flex-col gap-3.5 flex-1">
 
                         {/* Product Name */}
@@ -421,10 +421,10 @@ export default function AddWarranty() {
                 </div>
 
                 {/* RIGHT: receipt capture */}
-                <div className="flex flex-col gap-4 h-full min-h-0">
+                <div className="flex flex-col gap-4 lg:h-full min-h-0">
 
                     {/* Block A: Camera */}
-                    <div className={`flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200 ${isCameraOpen ? 'max-w-md w-full mx-auto' : ''}`}>
+                    <div className={`flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200 ${isCameraOpen ? 'max-w-md w-full mx-auto lg:h-full' : ''}`}>
                         <div className="flex items-center gap-2 mb-2 shrink-0">
                             <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
                                 <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -440,7 +440,7 @@ export default function AddWarranty() {
 
                         {isCameraOpen ? (
                             <div className="flex flex-col gap-3 w-full flex-1 justify-center min-h-0">
-                                <div className="relative rounded-xl overflow-hidden bg-black flex-1 min-h-0 w-full max-w-md mx-auto">
+                                <div className="relative rounded-xl overflow-hidden bg-black flex-1 min-h-[250px] sm:min-h-0 w-full max-w-md mx-auto">
                                     <video ref={videoRef} className="w-full h-full object-cover rounded-xl bg-black" autoPlay playsInline muted />
                                     <div className="absolute inset-0 pointer-events-none">
                                         <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-white/70 rounded-tl" />
@@ -462,7 +462,7 @@ export default function AddWarranty() {
                         ) : (
                             <button
                                 onClick={startCamera}
-                                className="flex-1 flex flex-col justify-center items-center w-full h-full gap-2 border-2 border-dashed border-blue-200 dark:border-blue-500/30 rounded-xl bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:border-blue-400 transition-all group p-2"
+                                className="flex-1 min-h-[140px] sm:min-h-0 flex flex-col justify-center items-center w-full gap-2 border-2 border-dashed border-blue-200 dark:border-blue-500/30 rounded-xl bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:border-blue-400 transition-all group p-4"
                             >
                                 <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                                     <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -497,7 +497,7 @@ export default function AddWarranty() {
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
-                                className={`flex-1 flex flex-col justify-center items-center w-full h-full gap-2 border-2 border-dashed rounded-xl transition-all p-2 min-h-0 ${
+                                className={`flex-1 min-h-[140px] sm:min-h-0 flex flex-col justify-center items-center w-full gap-2 border-2 border-dashed rounded-xl transition-all p-4 ${
                                     isDragging
                                         ? 'border-purple-500 bg-purple-50 dark:bg-purple-500/10 scale-[1.01]'
                                         : isScanning
