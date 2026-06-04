@@ -311,7 +311,7 @@ export default function Settings() {
                             </div>
                             <button
                                 onClick={handleVaultLockToggle}
-                                className={`w-12 h-6 rounded-full p-1 transition-colors ${vaultLockEnabled ? 'bg-purple-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors ${vaultLockEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
                             >
                                 <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${vaultLockEnabled ? 'translate-x-6' : ''}`}></div>
                             </button>
@@ -342,7 +342,7 @@ export default function Settings() {
                             </div>
                             <button
                                 onClick={handleAutoArchiveToggle}
-                                className={`w-12 h-6 rounded-full p-1 transition-colors ${autoArchiveExpired ? 'bg-purple-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors ${autoArchiveExpired ? 'bg-blue-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
                             >
                                 <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${autoArchiveExpired ? 'translate-x-6' : ''}`}></div>
                             </button>
@@ -405,12 +405,12 @@ export default function Settings() {
                         )}
 
                         {/* Option 7: Chatbot Preview Card */}
-                        <div className="mt-2 p-5 rounded-xl bg-purple-100 bg-gradient-to-br from-purple-200/90 to-indigo-100 dark:bg-purple-950/10 dark:bg-gradient-to-br dark:from-purple-950/20 dark:to-indigo-950/20 border border-purple-300/80 dark:border-purple-500/10 backdrop-blur-sm shadow-sm shadow-purple-500/5 opacity-75 select-none transition-colors duration-200">
+                        <div className="mt-2 p-5 rounded-xl bg-gradient-to-br from-violet-300/60 via-purple-200/50 to-pink-200/60 dark:from-violet-900/50 dark:via-purple-900/30 dark:to-pink-900/40 border border-violet-300/60 dark:border-violet-500/20 backdrop-blur-sm shadow-sm shadow-violet-500/10 opacity-80 select-none transition-colors duration-200">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <div className="relative flex items-center justify-center w-9 h-9">
-                                        <span className="absolute inline-flex h-9 w-9 rounded-full bg-indigo-400/40 dark:bg-indigo-400/30 animate-ping"></span>
-                                        <svg className="relative w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                        <span className="absolute inline-flex h-9 w-9 rounded-full bg-white/50 dark:bg-slate-300/25 animate-ping"></span>
+                                        <svg className="relative w-6 h-6 text-slate-400 dark:text-slate-300" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                             <path d="M12 8V4H8" />
                                             <rect width="16" height="12" x="4" y="8" rx="2" />
                                             <path d="M2 14h2" />
@@ -420,7 +420,7 @@ export default function Settings() {
                                         </svg>
                                     </div>
                                     <span className="font-bold text-gray-800 dark:text-neutral-200 text-sm sm:text-base">AI Warranty Assistant</span>
-                                    <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase bg-purple-50 text-purple-700 border border-purple-400/60 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800/50 rounded-md">
+                                    <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase bg-purple-50 text-purple-700 border border-white/20 dark:bg-purple-900/40 dark:text-purple-300 dark:border-white/20 rounded-md">
                                         Coming Soon
                                     </span>
                                 </div>
@@ -428,8 +428,8 @@ export default function Settings() {
                             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
                                 Unlock the power of your own personal AI assistant. Soon you'll be able to chat with your vault to instantly look up warranty policies, ask about upcoming expiration dates, and get smart alerts using plain text.
                             </p>
-                            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 dark:text-neutral-500 border-t border-gray-100 dark:border-neutral-800/60 pt-2.5">
-                                <svg className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <div className="lock-footer flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 dark:text-neutral-500 border-t border-gray-100 dark:border-neutral-800/60 pt-2.5 cursor-default">
+                                <svg className="lock-icon w-3.5 h-3.5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                     <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                 </svg>
