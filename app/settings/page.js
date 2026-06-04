@@ -428,8 +428,8 @@ export default function Settings() {
                             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
                                 Unlock the power of your own personal AI assistant. Soon you'll be able to chat with your vault to instantly look up warranty policies, ask about upcoming expiration dates, and get smart alerts using plain text.
                             </p>
-                            <div className="lock-footer flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 dark:text-neutral-500 border-t border-gray-100 dark:border-neutral-800/60 pt-2.5 cursor-default">
-                                <svg className="lock-icon w-3.5 h-3.5 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <div className="lock-footer flex items-center gap-1.5 text-xs font-semibold text-gray-400 dark:text-neutral-500 border-t border-gray-100 dark:border-neutral-800/60 pt-2.5 cursor-default">
+                                <svg className="lock-icon w-4 h-4 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                     <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                 </svg>
@@ -441,7 +441,7 @@ export default function Settings() {
 
                 {/* Danger Zone */}
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border-2 border-red-300 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
-                    <h2 className="text-xl font-bold mb-4 text-red-500 border-b-2 border-red-300 dark:border-red-700/60 pb-2">Danger Zone</h2>
+                    <h2 className="text-xl font-bold mb-4 text-red-500 border-b-2 border-gray-400 dark:border-neutral-500 pb-2">Danger Zone</h2>
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                             <div>
