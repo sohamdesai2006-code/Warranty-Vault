@@ -197,7 +197,8 @@ export default function Home() {
             <img 
               src="/logo.png" 
               alt="Warranty Vault Logo" 
-              className="h-20 sm:h-24 w-auto object-contain mx-auto md:mx-0" 
+              className="h-20 sm:h-24 w-auto object-contain mx-auto md:mx-0 select-none pointer-events-none" 
+              draggable="false"
             />
             <p className="text-gray-500 dark:text-neutral-400 mt-1 text-sm sm:text-base font-medium transition-all">
               {user?.user_metadata?.full_name

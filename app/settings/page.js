@@ -389,7 +389,7 @@ export default function Settings() {
                         </div>
                         )}
                         {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-neutral-700/50">
+                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 pb-3">
                             <div>
                                 <p className="font-medium">Test Distribution</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Verify email system is operational</p>
