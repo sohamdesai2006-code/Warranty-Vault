@@ -239,7 +239,7 @@ export default function Settings() {
 
                 {/* Profile Info */}
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
-                    <h2 className="text-xl font-bold mb-4 border-b border-gray-200 dark:border-neutral-700 pb-2">Profile Information</h2>
+                    <h2 className="text-xl font-bold mb-4 border-b-2 border-gray-400 dark:border-neutral-500 pb-2">Profile Information</h2>
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center text-2xl font-bold shadow-md">
                             {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}
@@ -253,9 +253,9 @@ export default function Settings() {
 
                 {/* Account Preferences */}
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-400 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
-                    <h2 className="text-xl font-bold mb-4 border-b border-gray-200 dark:border-neutral-700 pb-2">Preferences</h2>
+                    <h2 className="text-xl font-bold mb-4 border-b-2 border-gray-400 dark:border-neutral-500 pb-2">Preferences</h2>
                     <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
                             <div>
                                 <p className="font-medium">Dark Mode</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Use dark theme</p>
@@ -267,7 +267,7 @@ export default function Settings() {
                                 <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${darkMode ? 'translate-x-6' : ''}`}></div>
                             </button>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
                             <div>
                                 <p className="font-medium">Session Duration</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Keep me logged in for...</p>
@@ -285,7 +285,7 @@ export default function Settings() {
                                 <option value="30">30 days</option>
                             </select>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
                             <div>
                                 <div className="flex items-center gap-1.5">
                                     <p className="font-medium">Auto-Lock on Tab Switch</p>
@@ -316,7 +316,7 @@ export default function Settings() {
                                 <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${vaultLockEnabled ? 'translate-x-6' : ''}`}></div>
                             </button>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
                             <div>
                                 <div className="flex items-center gap-1.5">
                                     <p className="font-medium">Auto-archive expired warranties</p>
@@ -348,7 +348,7 @@ export default function Settings() {
                             </button>
                         </div>
                         {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
                             <div>
                                 <p className="font-medium">Email Notifications</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Receive warranty expiration alerts</p>
@@ -441,7 +441,7 @@ export default function Settings() {
 
                 {/* Danger Zone */}
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border-2 border-red-300 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
-                    <h2 className="text-xl font-bold mb-4 text-red-500 border-b border-red-100 dark:border-red-900/30 pb-2">Danger Zone</h2>
+                    <h2 className="text-xl font-bold mb-4 text-red-500 border-b-2 border-red-300 dark:border-red-700/60 pb-2">Danger Zone</h2>
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
                             <div>
@@ -455,7 +455,7 @@ export default function Settings() {
                                 Sign Out
                             </button>
                         </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-neutral-700/50">
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-300 dark:border-neutral-700">
                             <div>
                                 <p className="font-medium text-red-500 dark:text-red-400">Delete Account</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Permanently delete your account and data</p>
