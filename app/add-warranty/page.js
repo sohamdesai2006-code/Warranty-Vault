@@ -15,7 +15,9 @@ export default function AddWarranty() {
     const isCameraOpenRef = useRef(false)
     const isMountedRef = useRef(true)
 
-    isCameraOpenRef.current = isCameraOpen
+    useEffect(() => {
+        isCameraOpenRef.current = isCameraOpen
+    }, [isCameraOpen])
 
     useEffect(() => {
         isMountedRef.current = true
@@ -30,8 +32,7 @@ export default function AddWarranty() {
             if (!user) router.push('/login')
         }
         checkUser()
-        return () => stopCamera()
-    }, [router])
+    }, [])
 
     useEffect(() => {
         if (isCameraOpen && streamRef.current && videoRef.current) {
@@ -57,8 +58,23 @@ export default function AddWarranty() {
     const [isDragging, setIsDragging] = useState(false)
     const [scanSuccess, setScanSuccess] = useState(false)
     const [scanError, setScanError] = useState('')
+    const [todayString, setTodayString] = useState('')
 
-    const todayString = new Date().toISOString().split('T')[0]
+    useEffect(() => {
+        setTodayString(new Date().toISOString().split('T')[0])
+    }, [])
+
+    const getPurchaseMaxDate = () => {
+        if (formData.expiry_date && formData.expiry_date < todayString) return formData.expiry_date
+        return todayString
+    }
+
+    const getDragZoneClass = () => {
+        if (isDragging) return 'border-purple-500 bg-purple-50 dark:bg-purple-500/10 scale-[1.01]'
+        if (isScanning) return 'border-purple-400 dark:border-purple-500/50 bg-purple-50 dark:bg-purple-500/5'
+        if (receiptFile) return 'border-emerald-400 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-500/5'
+        return 'border-gray-200 dark:border-neutral-700 hover:border-purple-400 dark:hover:border-purple-500/50 hover:bg-gray-100/50 dark:hover:bg-neutral-800/30'
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -293,7 +309,7 @@ export default function AddWarranty() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                                {scanError.toLowerCase().includes('quota') || scanError.toLowerCase().includes('limit') || scanError.toLowerCase().includes('429')
+                                {/quota|limit|429/i.test(scanError)
                                     ? 'API scan limit reached. Please fill form manually.'
                                     : `Scan failed: ${scanError}`}
                             </p>
@@ -338,7 +354,7 @@ export default function AddWarranty() {
                                 <input
                                     type="date" id="purchase_date" name="purchase_date" required
                                     value={formData.purchase_date} onChange={handleChange}
-                                    max={formData.expiry_date ? (formData.expiry_date < todayString ? formData.expiry_date : todayString) : todayString}
+                                    max={getPurchaseMaxDate()}
                                     className={`${inputClass} ${dateError ? 'border-red-400' : ''}`}
                                 />
                             </div>
@@ -497,15 +513,7 @@ export default function AddWarranty() {
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
-                                className={`flex-1 min-h-[140px] sm:min-h-0 flex flex-col justify-center items-center w-full gap-2 border-2 border-dashed rounded-xl transition-all p-4 ${
-                                    isDragging
-                                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-500/10 scale-[1.01]'
-                                        : isScanning
-                                        ? 'border-purple-400 dark:border-purple-500/50 bg-purple-50 dark:bg-purple-500/5'
-                                        : receiptFile
-                                        ? 'border-emerald-400 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-500/5'
-                                        : 'border-gray-200 dark:border-neutral-700 hover:border-purple-400 dark:hover:border-purple-500/50 hover:bg-gray-100/50 dark:hover:bg-neutral-800/30'
-                                }`}
+                                className={`flex-1 min-h-[140px] sm:min-h-0 flex flex-col justify-center items-center w-full gap-2 border-2 border-dashed rounded-xl transition-all p-4 ${getDragZoneClass()}`}
                             >
                                 {isScanning ? (
                                     <>

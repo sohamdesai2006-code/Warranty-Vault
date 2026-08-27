@@ -62,7 +62,16 @@ export default function EditWarranty() {
         }
     }
 
-    const todayString = new Date().toISOString().split('T')[0]
+    const [todayString, setTodayString] = useState('')
+
+    useEffect(() => {
+        setTodayString(new Date().toISOString().split('T')[0])
+    }, [])
+
+    const getPurchaseMaxDate = () => {
+        if (formData.expiry_date && formData.expiry_date < todayString) return formData.expiry_date
+        return todayString
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -214,7 +223,7 @@ export default function EditWarranty() {
                                     id="purchase_date"
                                     name="purchase_date"
                                     value={formData.purchase_date}
-                                    max={formData.expiry_date ? (formData.expiry_date < todayString ? formData.expiry_date : todayString) : todayString}
+                                    max={getPurchaseMaxDate()}
                                     onChange={handleChange}
                                     className={`w-full px-4 py-2 bg-gray-50 dark:bg-neutral-700 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white ${
                                         dateError ? 'border-red-400 dark:border-red-500' : 'border-gray-300 dark:border-neutral-600'
