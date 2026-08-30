@@ -215,7 +215,7 @@ export default function Home() {
             />
             <p className="text-gray-500 dark:text-neutral-400 mt-1 text-sm sm:text-base font-medium transition-all">
               {user?.user_metadata?.full_name
-                ? `Welcome back, ${formatName(user.user_metadata.full_name)}!`
+                ? `Welcome, ${formatName(user.user_metadata.full_name)}!`
                 : 'Track and manage your product warranties'}
             </p>
           </div>

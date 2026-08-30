@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
@@ -41,6 +41,42 @@ export default function Settings() {
     const [pinSetupInput, setPinSetupInput] = useState('')
     const [pinSetupConfirm, setPinSetupConfirm] = useState('')
     const [pinSetupError, setPinSetupError] = useState('')
+    const [activeTooltip, setActiveTooltip] = useState(null)
+    const tooltipTimeoutRef = useRef(null)
+
+    const handleTooltipTap = (name) => {
+        if (tooltipTimeoutRef.current) {
+            clearTimeout(tooltipTimeoutRef.current)
+            tooltipTimeoutRef.current = null
+        }
+        if (activeTooltip === name) {
+            setActiveTooltip(null)
+        } else {
+            setActiveTooltip(name)
+            tooltipTimeoutRef.current = setTimeout(() => {
+                setActiveTooltip(null)
+                tooltipTimeoutRef.current = null
+            }, 5000)
+        }
+    }
+
+    const handleTooltipHover = (name) => {
+        if (!tooltipTimeoutRef.current) {
+            setActiveTooltip(name)
+        }
+    }
+
+    const handleTooltipLeave = () => {
+        if (!tooltipTimeoutRef.current) {
+            setActiveTooltip(null)
+        }
+    }
+
+    useEffect(() => {
+        return () => {
+            if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
+        }
+    }, [])
 
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -223,7 +259,7 @@ export default function Settings() {
 
     return (
         <>
-        <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white pb-12 transition-colors duration-200">
+        <div className="min-h-screen w-full overflow-x-hidden bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white pb-12 transition-colors duration-200">
             {/* Nav */}
             <div className="max-w-4xl mx-auto px-4 md:px-6 pt-6 pb-2">
                 <Link href="/" className="inline-flex items-center gap-2 text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-3">
@@ -245,8 +281,8 @@ export default function Settings() {
                             {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}
                         </div>
                         <div>
-                            <p className="text-lg font-semibold">{user?.user_metadata?.full_name || 'User'}</p>
-                            <p className="text-gray-500 dark:text-neutral-400">{user?.email}</p>
+                            <p className="text-lg font-semibold truncate">{user?.user_metadata?.full_name || 'User'}</p>
+                            <p className="text-gray-500 dark:text-neutral-400 truncate">{user?.email}</p>
                         </div>
                     </div>
                 </div>
@@ -285,67 +321,73 @@ export default function Settings() {
                                 <option value="30">30 days</option>
                             </select>
                         </div>
-                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
-                            <div>
-                                <div className="flex items-center gap-1.5">
-                                    <p className="font-medium">Auto-Lock on Tab Switch</p>
-                                    <div className="relative group flex items-center">
-                                        <button 
-                                            type="button"
-                                            className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors focus:outline-none"
-                                            aria-label="More information"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                                                <circle cx="12" cy="12" r="10" />
-                                                <path d="M12 16v-4" />
-                                                <path d="M12 8h.01" />
-                                            </svg>
-                                        </button>
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 dark:bg-neutral-800 text-white text-xs rounded-xl shadow-xl border border-gray-800 dark:border-neutral-700 pointer-events-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left leading-relaxed font-normal">
-                                            This security PIN works only on the device and browser where it was created. If you forget your PIN and choose to log out, the local security PIN will be deleted and this feature will be turned off automatically.
-                                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 dark:bg-neutral-800 rotate-45 border-r border-b border-gray-800 dark:border-neutral-700"></div>
-                                        </div>
-                                    </div>
+                        <div className="relative flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
+                            {activeTooltip === 'autolock' && (
+                                <div className="absolute bottom-full left-0 right-0 sm:left-auto sm:right-16 mb-2 sm:w-72 p-3 bg-gray-900 dark:bg-neutral-800 text-white text-xs rounded-xl shadow-2xl border border-gray-800 dark:border-neutral-700 z-50 text-left leading-relaxed font-normal whitespace-normal">
+                                    This security PIN works only on the device and browser where it was created. If you forget your PIN and choose to log out, the local security PIN will be deleted and this feature will be turned off automatically.
+                                    <div className="absolute top-full right-16 sm:right-4 -mt-1 w-2.5 h-2.5 bg-gray-900 dark:bg-neutral-800 rotate-45 border-r border-b border-gray-800 dark:border-neutral-700"></div>
                                 </div>
+                            )}
+                            <div className="flex-1 pr-3">
+                                <p className="font-medium">Auto-Lock on Tab Switch</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Lock vault when clicking away</p>
                             </div>
-                            <button
-                                onClick={handleVaultLockToggle}
-                                className={`w-12 h-6 rounded-full p-1 transition-colors ${vaultLockEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
-                            >
-                                <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${vaultLockEnabled ? 'translate-x-6' : ''}`}></div>
-                            </button>
+                            <div className="flex items-center gap-3 shrink-0">
+                                <button 
+                                    type="button"
+                                    onClick={() => handleTooltipTap('autolock')}
+                                    onMouseEnter={() => handleTooltipHover('autolock')}
+                                    onMouseLeave={handleTooltipLeave}
+                                    className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors focus:outline-none p-1"
+                                    aria-label="More information"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 16v-4" />
+                                        <path d="M12 8h.01" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={handleVaultLockToggle}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors ${vaultLockEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
+                                >
+                                    <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${vaultLockEnabled ? 'translate-x-6' : ''}`}></div>
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
-                            <div>
-                                <div className="flex items-center gap-1.5">
-                                    <p className="font-medium">Auto-archive expired warranties</p>
-                                    <div className="relative group flex items-center">
-                                        <button 
-                                            type="button"
-                                            className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors focus:outline-none"
-                                            aria-label="More information"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                                                <circle cx="12" cy="12" r="10" />
-                                                <path d="M12 16v-4" />
-                                                <path d="M12 8h.01" />
-                                            </svg>
-                                        </button>
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 dark:bg-neutral-800 text-white text-xs rounded-xl shadow-xl border border-gray-800 dark:border-neutral-700 pointer-events-none opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-left leading-relaxed font-normal">
-                                            When enabled, expired products will be automatically moved from your main dashboard view into a separate Archive tab so your main list stays uncluttered.
-                                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2.5 h-2.5 bg-gray-900 dark:bg-neutral-800 rotate-45 border-r border-b border-gray-800 dark:border-neutral-700"></div>
-                                        </div>
-                                    </div>
+                        <div className="relative flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
+                            {activeTooltip === 'autoarchive' && (
+                                <div className="absolute bottom-full left-0 right-0 sm:left-auto sm:right-16 mb-2 sm:w-72 p-3 bg-gray-900 dark:bg-neutral-800 text-white text-xs rounded-xl shadow-2xl border border-gray-800 dark:border-neutral-700 z-50 text-left leading-relaxed font-normal whitespace-normal">
+                                    When enabled, expired products will be automatically moved from your main dashboard view into a separate Archive tab so your main list stays uncluttered.
+                                    <div className="absolute top-full right-16 sm:right-4 -mt-1 w-2.5 h-2.5 bg-gray-900 dark:bg-neutral-800 rotate-45 border-r border-b border-gray-800 dark:border-neutral-700"></div>
                                 </div>
+                            )}
+                            <div className="flex-1 pr-3">
+                                <p className="font-medium">Auto-archive expired warranties</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Archive expired items automatically</p>
                             </div>
-                            <button
-                                onClick={handleAutoArchiveToggle}
-                                className={`w-12 h-6 rounded-full p-1 transition-colors ${autoArchiveExpired ? 'bg-blue-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
-                            >
-                                <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${autoArchiveExpired ? 'translate-x-6' : ''}`}></div>
-                            </button>
+                            <div className="flex items-center gap-3 shrink-0">
+                                <button 
+                                    type="button"
+                                    onClick={() => handleTooltipTap('autoarchive')}
+                                    onMouseEnter={() => handleTooltipHover('autoarchive')}
+                                    onMouseLeave={handleTooltipLeave}
+                                    className="text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors focus:outline-none p-1"
+                                    aria-label="More information"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 16v-4" />
+                                        <path d="M12 8h.01" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={handleAutoArchiveToggle}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors ${autoArchiveExpired ? 'bg-blue-600' : 'bg-gray-300 dark:bg-neutral-600'}`}
+                                >
+                                    <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${autoArchiveExpired ? 'translate-x-6' : ''}`}></div>
+                                </button>
+                            </div>
                         </div>
                         {user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
                         <div className="flex items-center justify-between border-b border-gray-300 dark:border-neutral-700 last:border-0 pb-3">
@@ -407,8 +449,8 @@ export default function Settings() {
                         {/* Option 7: Chatbot Preview Card */}
                         <div className="mt-2 p-5 rounded-xl bg-gradient-to-br from-violet-300/60 via-purple-200/50 to-pink-200/60 dark:from-violet-900/50 dark:via-purple-900/30 dark:to-pink-900/40 border border-violet-300/60 dark:border-violet-500/20 backdrop-blur-sm shadow-sm shadow-violet-500/10 opacity-80 select-none transition-colors duration-200">
                             <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="relative flex items-center justify-center w-9 h-9">
+                                <div className="flex items-center flex-wrap gap-2 min-w-0">
+                                    <div className="relative flex items-center justify-center w-9 h-9 shrink-0">
                                         <span className="absolute inline-flex h-9 w-9 rounded-full bg-white/50 dark:bg-slate-300/25 animate-ping"></span>
                                         <svg className="relative w-6 h-6 text-slate-400 dark:text-slate-300" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                             <path d="M12 8V4H8" />
@@ -419,8 +461,8 @@ export default function Settings() {
                                             <path d="M9 13v2" />
                                         </svg>
                                     </div>
-                                    <span className="font-bold text-gray-800 dark:text-neutral-200 text-sm sm:text-base">AI Warranty Assistant</span>
-                                    <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase bg-purple-50 text-purple-700 border border-white/20 dark:bg-purple-900/40 dark:text-purple-300 dark:border-white/20 rounded-md">
+                                    <span className="font-bold text-gray-800 dark:text-neutral-200 text-sm sm:text-base truncate">AI Warranty Assistant</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase bg-purple-50 text-purple-700 border border-white/20 dark:bg-purple-900/40 dark:text-purple-300 dark:border-white/20 rounded-md shrink-0">
                                         Coming Soon
                                     </span>
                                 </div>
@@ -443,28 +485,28 @@ export default function Settings() {
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border-2 border-red-300 dark:border-gray-700 p-6 shadow-md transition-colors duration-200">
                     <h2 className="text-xl font-bold mb-4 text-red-500 border-b-2 border-gray-400 dark:border-neutral-500 pb-2">Danger Zone</h2>
                     <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Sign Out</p>
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">Sign Out</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Log out of your account on this device</p>
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className="px-4 py-2 bg-red-600 text-white dark:bg-transparent dark:border dark:border-red-500 dark:text-red-500 rounded-md font-medium transition-all hover:opacity-90 shadow-sm"
+                                className="w-24 h-10 shrink-0 flex items-center justify-center bg-red-600 text-white border border-transparent dark:bg-transparent dark:border-red-500 dark:text-red-500 rounded-md font-medium text-sm transition-all hover:opacity-90 shadow-sm"
                             >
                                 Sign Out
                             </button>
                         </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-300 dark:border-neutral-700">
-                            <div>
-                                <p className="font-medium text-red-500 dark:text-red-400">Delete Account</p>
+                        <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-300 dark:border-neutral-700">
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium text-red-500 dark:text-red-400 truncate">Delete Account</p>
                                 <p className="text-sm text-gray-500 dark:text-neutral-400">Permanently delete your account and data</p>
                             </div>
                             <button
                                 onClick={handleDeleteAccount}
-                                className="px-4 py-2 bg-red-600 text-white dark:bg-transparent dark:border dark:border-red-500 dark:text-red-500 rounded-md font-medium transition-all hover:opacity-90 shadow-sm"
+                                className="w-24 h-10 shrink-0 flex items-center justify-center bg-red-600 text-white border border-transparent dark:bg-transparent dark:border-red-500 dark:text-red-500 rounded-md font-medium text-[13px] text-center leading-tight transition-all hover:opacity-90 shadow-sm px-1"
                             >
-                                Delete Account
+                                <span>Delete<br />Account</span>
                             </button>
                         </div>
                     </div>
