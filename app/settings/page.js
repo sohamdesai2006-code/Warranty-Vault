@@ -547,7 +547,7 @@ export default function Settings() {
                                     </div>
                                 </div>
                                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
-                                    Unlock the power of your own personal AI assistant. Soon you'll be able to chat with your vault to instantly look up warranty policies, ask about upcoming expiration dates, and get smart alerts using plain text.
+                                    Unlock the power of your personal AI assistant. Soon you'll be able to chat with your vault to instantly look up warranty terms, check expiration dates and product details, find official brand customer care contacts, draft ready-to-send claim emails and get step-by-step guidance whenever you need support.
                                 </p>
                                 <div className="lock-footer flex items-center gap-1.5 text-xs font-semibold text-gray-400 dark:text-neutral-500 border-t border-gray-100 dark:border-neutral-800/60 pt-2.5 cursor-default">
                                     <svg className="lock-icon w-4 h-4 text-amber-500 dark:text-amber-400" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">

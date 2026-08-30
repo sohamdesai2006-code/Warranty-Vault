@@ -46,8 +46,17 @@ export async function POST(request) {
         } catch (apiError) {
             console.error("Parsing Error Details:", apiError)
             const status = apiError.status || apiError.statusCode || 500
+            let userFriendlyMsg = 'AI scanner is experiencing high demand right now. Please try again in a moment or fill in details manually.'
+
+            const rawMsg = (apiError.message || '').toLowerCase()
+            if (rawMsg.includes('429') || rawMsg.includes('quota') || rawMsg.includes('limit') || rawMsg.includes('resource_exhausted')) {
+                userFriendlyMsg = 'AI scan limit reached for today. Please fill in details manually or try again tomorrow.'
+            } else if (rawMsg.includes('503') || rawMsg.includes('unavailable') || rawMsg.includes('high demand') || rawMsg.includes('temporary')) {
+                userFriendlyMsg = 'AI scanner is experiencing high demand right now. Please try again in a moment or fill in details manually.'
+            }
+
             return NextResponse.json(
-                { error: apiError.message || 'Failed to parse receipt image via AI.' },
+                { error: userFriendlyMsg },
                 { status }
             )
         }
@@ -60,14 +69,21 @@ export async function POST(request) {
             .replace(/```/g, '')
             .trim()
 
-        const parsed = JSON.parse(cleaned)
-
-        return NextResponse.json(parsed, { status: 200 })
+        try {
+            const parsed = JSON.parse(cleaned)
+            return NextResponse.json(parsed, { status: 200 })
+        } catch (parseError) {
+            console.error('JSON Parse Error:', parseError, 'Raw Text:', rawText)
+            return NextResponse.json(
+                { error: "Couldn't clearly read receipt text. Please try a clearer photo or enter details manually." },
+                { status: 422 }
+            )
+        }
 
     } catch (error) {
         console.error('scan-receipt error:', error)
         return NextResponse.json(
-            { error: error.message || 'Failed to process receipt.' },
+            { error: 'AI scan is temporarily unavailable. Please enter details manually.' },
             { status: 500 }
         )
     }
