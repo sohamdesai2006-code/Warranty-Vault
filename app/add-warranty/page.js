@@ -8,21 +8,59 @@ import { supabase } from '@/lib/supabase'
 export default function AddWarranty() {
     const router = useRouter()
     const videoRef = useRef(null)
-    const canvasRef = useRef(null)
     const streamRef = useRef(null)
     const [isCameraOpen, setIsCameraOpen] = useState(false)
+    const [cameraFacingMode, setCameraFacingMode] = useState('environment')
+    const [capturedPhoto, setCapturedPhoto] = useState(null)
+    const [showReviewTip, setShowReviewTip] = useState(true)
     const wasCameraOpenRef = useRef(false)
     const isCameraOpenRef = useRef(false)
     const isMountedRef = useRef(true)
+    const capturedPhotoUrlRef = useRef(null)
+    const cameraFacingModeRef = useRef('environment')
+
+    useEffect(() => {
+        cameraFacingModeRef.current = cameraFacingMode
+    }, [cameraFacingMode])
+
+    useEffect(() => {
+        if (capturedPhoto) {
+            setShowReviewTip(true)
+            const timer = setTimeout(() => {
+                setShowReviewTip(false)
+            }, 5000)
+            return () => clearTimeout(timer)
+        }
+    }, [capturedPhoto])
 
     useEffect(() => {
         isCameraOpenRef.current = isCameraOpen
+    }, [isCameraOpen])
+
+    // Keyboard accessibility: ESC closes camera modal
+    useEffect(() => {
+        if (!isCameraOpen) return
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                stopCamera()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
     }, [isCameraOpen])
 
     useEffect(() => {
         isMountedRef.current = true
         return () => {
             isMountedRef.current = false
+            if (capturedPhotoUrlRef.current) {
+                URL.revokeObjectURL(capturedPhotoUrlRef.current)
+                capturedPhotoUrlRef.current = null
+            }
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach((t) => t.stop())
+                streamRef.current = null
+            }
         }
     }, [])
 
@@ -36,10 +74,27 @@ export default function AddWarranty() {
 
     useEffect(() => {
         if (isCameraOpen && streamRef.current && videoRef.current) {
-            videoRef.current.srcObject = streamRef.current
-            videoRef.current.play().catch((err) => console.error('Error playing video:', err))
+            const video = videoRef.current
+            if (video.srcObject !== streamRef.current) {
+                video.srcObject = streamRef.current
+            }
+            const playVideo = () => {
+                const playPromise = video.play()
+                if (playPromise !== undefined) {
+                    playPromise.catch((err) => {
+                        if (err.name !== 'AbortError') {
+                            console.warn('Camera video play interrupted:', err)
+                        }
+                    })
+                }
+            }
+            if (video.readyState >= 2) {
+                playVideo()
+            } else {
+                video.addEventListener('loadeddata', playVideo, { once: true })
+            }
         }
-    }, [isCameraOpen])
+    }, [isCameraOpen, cameraFacingMode])
 
     const [formData, setFormData] = useState({
         name: '',
@@ -127,10 +182,10 @@ export default function AddWarranty() {
 
     const handleFileSelect = async (file) => {
         if (!file) return
-        const allowedTypes = ['image/jpeg', 'image/png']
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
         const fileType = file.type || ''
         const fileExtension = file.name ? file.name.split('.').pop().toLowerCase() : ''
-        if (!allowedTypes.includes(fileType) && !['jpg', 'jpeg', 'png'].includes(fileExtension)) {
+        if (!allowedTypes.includes(fileType) && !['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'].includes(fileExtension)) {
             alert('Invalid file format. Please upload a JPG or PNG receipt image.')
             return
         }
@@ -150,53 +205,107 @@ export default function AddWarranty() {
         if (file) handleFileSelect(file)
     }
 
-    async function startCamera() {
+    async function startCamera(mode = cameraFacingModeRef.current) {
         if (document.hidden || !isMountedRef.current) return
+        if (!navigator?.mediaDevices?.getUserMedia) {
+            alert('Camera access is not supported on this browser or requires a secure HTTPS connection.')
+            return
+        }
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((t) => t.stop())
+            streamRef.current = null
+        }
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', aspectRatio: { ideal: 3/4 } }
+                video: {
+                    facingMode: { ideal: mode },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
             })
             if (!isMountedRef.current || document.hidden) {
                 stream.getTracks().forEach((t) => t.stop())
                 return
             }
             streamRef.current = stream
+            setCameraFacingMode(mode)
             setIsCameraOpen(true)
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream
+                const playPromise = videoRef.current.play()
+                if (playPromise !== undefined) {
+                    playPromise.catch((err) => {
+                        if (err.name !== 'AbortError') console.warn('Camera play error:', err)
+                    })
+                }
+            }
         } catch (err) {
             if (!isMountedRef.current || document.hidden) return
             try {
-                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: { aspectRatio: { ideal: 3/4 } } })
+                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true })
                 if (!isMountedRef.current || document.hidden) {
                     fallbackStream.getTracks().forEach((t) => t.stop())
                     return
                 }
                 streamRef.current = fallbackStream
                 setIsCameraOpen(true)
-            } catch (fallbackErr) {
-                if (!isMountedRef.current || document.hidden) return
-                try {
-                    const fallbackStream2 = await navigator.mediaDevices.getUserMedia({ video: true })
-                    if (!isMountedRef.current || document.hidden) {
-                        fallbackStream2.getTracks().forEach((t) => t.stop())
-                        return
+                if (videoRef.current) {
+                    videoRef.current.srcObject = fallbackStream
+                    const playPromise = videoRef.current.play()
+                    if (playPromise !== undefined) {
+                        playPromise.catch((err) => {
+                            if (err.name !== 'AbortError') console.warn('Camera play error:', err)
+                        })
                     }
-                    streamRef.current = fallbackStream2
-                    setIsCameraOpen(true)
-                } catch (err3) {
-                    alert('Could not access camera. Please check browser permissions.')
                 }
+            } catch (fallbackErr) {
+                alert('Could not access camera. Please allow camera permissions in your browser.')
             }
         }
     }
 
+    const toggleCamera = async () => {
+        const nextMode = cameraFacingModeRef.current === 'environment' ? 'user' : 'environment'
+        await startCamera(nextMode)
+    }
+
     function stopCamera() {
+        if (capturedPhotoUrlRef.current) {
+            URL.revokeObjectURL(capturedPhotoUrlRef.current)
+            capturedPhotoUrlRef.current = null
+        }
+        setCapturedPhoto(null)
         if (streamRef.current) {
             streamRef.current.getTracks().forEach((t) => t.stop())
             streamRef.current = null
         }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null
+        }
         if (isMountedRef.current) {
             setIsCameraOpen(false)
         }
+    }
+
+    const handleRetake = async () => {
+        if (capturedPhotoUrlRef.current) {
+            URL.revokeObjectURL(capturedPhotoUrlRef.current)
+            capturedPhotoUrlRef.current = null
+        }
+        setCapturedPhoto(null)
+        await startCamera(cameraFacingModeRef.current)
+    }
+
+    const handleConfirmPhoto = async () => {
+        if (!capturedPhoto) return
+        const file = capturedPhoto.file
+        if (capturedPhotoUrlRef.current) {
+            URL.revokeObjectURL(capturedPhotoUrlRef.current)
+            capturedPhotoUrlRef.current = null
+        }
+        setCapturedPhoto(null)
+        stopCamera()
+        await handleFileSelect(file)
     }
 
     useEffect(() => {
@@ -208,7 +317,7 @@ export default function AddWarranty() {
                 }
             } else {
                 if (wasCameraOpenRef.current) {
-                    startCamera()
+                    startCamera(cameraFacingModeRef.current)
                     wasCameraOpenRef.current = false
                 }
             }
@@ -222,19 +331,56 @@ export default function AddWarranty() {
     }, [])
 
     const capturePhoto = () => {
-        if (!videoRef.current || !canvasRef.current) return
+        if (!videoRef.current) return
         const video = videoRef.current
-        const canvas = canvasRef.current
-        if (video.videoWidth === 0) return
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        canvas.getContext('2d').drawImage(video, 0, 0)
-        canvas.toBlob(async (blob) => {
+        if (video.videoWidth === 0 || video.videoHeight === 0) return
+
+        const canvas = document.createElement('canvas')
+        const vWidth = video.videoWidth
+        const vHeight = video.videoHeight
+        const cWidth = video.clientWidth || vWidth
+        const cHeight = video.clientHeight || vHeight
+
+        const videoRatio = vWidth / vHeight
+        const containerRatio = cWidth / cHeight
+
+        let sx = 0
+        let sy = 0
+        let sWidth = vWidth
+        let sHeight = vHeight
+
+        if (videoRatio > containerRatio) {
+            // Video stream is wider than viewport (cropped horizontally on screen by object-cover)
+            sWidth = vHeight * containerRatio
+            sx = (vWidth - sWidth) / 2
+        } else {
+            // Video stream is taller than viewport
+            sHeight = vWidth / containerRatio
+            sy = (vHeight - sHeight) / 2
+        }
+
+        canvas.width = Math.round(sWidth)
+        canvas.height = Math.round(sHeight)
+
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height)
+
+        // Immediately stop camera hardware tracks to turn off privacy indicator light
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop())
+            streamRef.current = null
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null
+        }
+
+        canvas.toBlob((blob) => {
             if (!blob) return
             const file = new File([blob], `camera-receipt-${Date.now()}.jpg`, { type: 'image/jpeg' })
-            stopCamera()
-            await handleFileSelect(file)
-        }, 'image/jpeg', 0.92)
+            const url = URL.createObjectURL(blob)
+            capturedPhotoUrlRef.current = url
+            setCapturedPhoto({ file, url })
+        }, 'image/jpeg', 0.95)
     }
 
     const uploadFile = async (file) => {
@@ -278,7 +424,133 @@ export default function AddWarranty() {
 
     return (
         <div className="min-h-screen lg:h-screen lg:max-h-screen overflow-y-auto lg:overflow-hidden flex flex-col pt-1.5 pb-3 px-4 md:px-6 bg-gray-50 dark:bg-black text-gray-900 dark:text-white transition-colors duration-200">
-            <canvas ref={canvasRef} className="hidden" />
+            {/* Full-Screen Hardware Camera Scanner */}
+            {isCameraOpen && (
+                <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between animate-in fade-in duration-200">
+                    {/* Top Bar */}
+                    <div className="w-full max-w-md mx-auto flex items-center justify-between px-4 py-3 z-10 text-white shrink-0">
+                        <div className="flex items-center gap-2">
+                            <span className={`w-2.5 h-2.5 rounded-full ${capturedPhoto ? 'bg-blue-400' : 'bg-emerald-400 animate-pulse'}`}></span>
+                            <span className="text-sm font-semibold tracking-wide">
+                                {capturedPhoto ? 'Review Photo' : 'Receipt Scanner'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={stopCamera}
+                                className="p-2.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white transition-all active:scale-95"
+                                title="Close camera"
+                                aria-label="Close camera"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Camera Feed or Captured Photo Preview - Centered Portrait Viewfinder */}
+                    <div className="relative flex-1 flex items-center justify-center overflow-hidden px-4 py-2 min-h-0 w-full">
+                        <div className="relative w-full max-w-sm sm:max-w-md h-full max-h-[580px] aspect-[3/4] rounded-2xl overflow-hidden bg-black shadow-2xl border border-white/10 flex items-center justify-center">
+                            {/* Video stays mounted so Retake immediately reveals live feed without black screen */}
+                            <video
+                                ref={videoRef}
+                                className="w-full h-full object-cover"
+                                autoPlay
+                                playsInline
+                                muted
+                            />
+
+                            {capturedPhoto ? (
+                                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black">
+                                    <img
+                                        src={capturedPhoto.url}
+                                        alt="Captured receipt preview"
+                                        className="w-full h-full object-cover"
+                                    />
+                                    {showReviewTip && (
+                                        <div className="absolute top-4 inset-x-4 text-center pointer-events-none transition-opacity duration-500 animate-fade-in">
+                                            <span className="px-3.5 py-1.5 bg-black/75 backdrop-blur-md rounded-full text-xs text-white/90 font-medium shadow-md">
+                                                Check if text and numbers are clear
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                /* Document Guide Frame Overlay */
+                                <div className="absolute inset-4 sm:inset-5 border-2 border-white/40 rounded-xl pointer-events-none flex flex-col justify-between p-3 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]">
+                                    <div className="flex justify-between">
+                                        <div className="w-6 h-6 border-t-4 border-l-4 border-blue-500 -mt-1 -ml-1 rounded-tl"></div>
+                                        <div className="w-6 h-6 border-t-4 border-r-4 border-blue-500 -mt-1 -mr-1 rounded-tr"></div>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <div className="w-6 h-6 border-b-4 border-l-4 border-blue-500 -mb-1 -ml-1 rounded-bl"></div>
+                                        <div className="w-6 h-6 border-b-4 border-r-4 border-blue-500 -mb-1 -mr-1 rounded-br"></div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Bottom Controls */}
+                    <div className="px-6 py-4 pb-6 sm:pb-8 flex items-center justify-between z-10 max-w-md mx-auto w-full shrink-0">
+                        {capturedPhoto ? (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={handleRetake}
+                                    className="flex items-center gap-1.5 text-white/90 hover:text-white text-xs font-semibold px-4 py-2.5 bg-white/15 hover:bg-white/25 rounded-xl backdrop-blur-md transition-all active:scale-95"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span>Retake</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmPhoto}
+                                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-lg transition-all active:scale-95"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Upload</span>
+                                </button>
+                            </>
+                        ) : (
+                            <div className="w-full flex items-center justify-between">
+                                {/* Invisible spacer to keep shutter button perfectly centered */}
+                                <div className="w-16" aria-hidden="true" />
+
+                                {/* Shutter Button */}
+                                <button
+                                    type="button"
+                                    onClick={capturePhoto}
+                                    className="w-18 h-18 rounded-full border-4 border-white flex items-center justify-center p-1 transition-transform active:scale-90 shadow-2xl hover:scale-105"
+                                    aria-label="Capture photo"
+                                >
+                                    <div className="w-14 h-14 bg-white rounded-full transition-transform shadow-inner"></div>
+                                </button>
+
+                                {/* Flip Button */}
+                                <button
+                                    type="button"
+                                    onClick={toggleCamera}
+                                    className="w-16 text-white/80 hover:text-white text-xs font-semibold py-2 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                                    aria-label="Flip camera"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span>Flip</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ── Center-Aligned Content Container ── */}
             <div className="w-full max-w-5xl mx-auto px-4 mt-1 flex-1 min-h-0 lg:overflow-hidden flex flex-col">
@@ -440,7 +712,7 @@ export default function AddWarranty() {
                 <div className="flex flex-col gap-4 lg:h-full min-h-0">
 
                     {/* Block A: Camera */}
-                    <div className={`flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200 ${isCameraOpen ? 'max-w-md w-full mx-auto lg:h-full' : ''}`}>
+                    <div className="flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200">
                         <div className="flex items-center gap-2 mb-2 shrink-0">
                             <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
                                 <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -454,49 +726,26 @@ export default function AddWarranty() {
                             </div>
                         </div>
 
-                        {isCameraOpen ? (
-                            <div className="flex flex-col gap-3 w-full flex-1 justify-center min-h-0">
-                                <div className="relative rounded-xl overflow-hidden bg-black flex-1 min-h-[250px] sm:min-h-0 w-full max-w-md mx-auto">
-                                    <video ref={videoRef} className="w-full h-full object-cover rounded-xl bg-black" autoPlay playsInline muted />
-                                    <div className="absolute inset-0 pointer-events-none">
-                                        <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-white/70 rounded-tl" />
-                                        <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-white/70 rounded-tr" />
-                                        <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-white/70 rounded-bl" />
-                                        <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-white/70 rounded-br" />
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 shrink-0 w-full max-w-md mx-auto">
-                                    <button onClick={capturePhoto} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg active:scale-95">
-                                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /></svg>
-                                        Capture
-                                    </button>
-                                    <button onClick={stopCamera} className="px-4 py-2.5 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-600 dark:text-neutral-300 text-xs font-medium rounded-lg transition-all active:scale-95">
-                                        Cancel
-                                    </button>
-                                </div>
+                        <button
+                            type="button"
+                            onClick={() => startCamera('environment')}
+                            className="flex-1 min-h-[140px] sm:min-h-0 flex flex-col justify-center items-center w-full gap-2 border-2 border-dashed border-blue-200 dark:border-blue-500/30 rounded-xl bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:border-blue-400 transition-all group p-4 cursor-pointer"
+                        >
+                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
                             </div>
-                        ) : (
-                            <button
-                                onClick={startCamera}
-                                className="flex-1 min-h-[140px] sm:min-h-0 flex flex-col justify-center items-center w-full gap-2 border-2 border-dashed border-blue-200 dark:border-blue-500/30 rounded-xl bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 hover:border-blue-400 transition-all group p-4"
-                            >
-                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">Open Camera</p>
-                                    <p className="text-[11px] text-gray-400 dark:text-neutral-500">Point at your receipt</p>
-                                </div>
-                            </button>
-                        )}
+                            <div className="text-center">
+                                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">Open Camera</p>
+                                <p className="text-[11px] text-gray-400 dark:text-neutral-500">Point at your receipt</p>
+                            </div>
+                        </button>
                     </div>
 
                     {/* Block B: Upload */}
-                    {!isCameraOpen && (
-                        <div className="flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200">
+                    <div className="flex-1 flex flex-col bg-white dark:bg-[#121212] rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 min-h-0 shadow-sm dark:shadow-none transition-colors duration-200">
                             <div className="flex items-center gap-2 mb-2 shrink-0">
                                 <div className="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-500/20 flex items-center justify-center shrink-0">
                                     <svg className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -564,10 +813,9 @@ export default function AddWarranty() {
                                 <p className="text-[10px] text-gray-300 dark:text-neutral-600">JPG · PNG</p>
                             </div>
                         </div>
-                    )}
+                    </div>
 
                 </div>
-            </div>
             </div>
         </div>
     )
