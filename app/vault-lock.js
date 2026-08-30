@@ -22,11 +22,13 @@ export default function VaultLock() {
     const [pinError, setPinError] = useState('')
     const [isVerifying, setIsVerifying] = useState(false)
 
-    // Lock the vault (only if feature is enabled and PIN exists)
-    const lockVault = useCallback(() => {
+    // Lock the vault (only if feature is enabled and PIN exists for current user)
+    const lockVault = useCallback(async () => {
         if (typeof window === 'undefined') return
-        const enabled = localStorage.getItem('vaultLockEnabled') === 'true'
-        const pinHash = localStorage.getItem('vaultPinHash')
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const enabled = (localStorage.getItem(`wv_vaultLockEnabled_${user.id}`) || localStorage.getItem('vaultLockEnabled')) === 'true'
+        const pinHash = localStorage.getItem(`wv_pinHash_${user.id}`) || localStorage.getItem('vaultPinHash')
         if (enabled && pinHash) {
             setIsLocked(true)
             setPinInput('')
@@ -54,11 +56,13 @@ export default function VaultLock() {
         }
     }, [lockVault, pathname])
 
-
     const handleVerify = async (pin) => {
         setIsVerifying(true)
         const hash = await hashPin(pin)
-        const stored = localStorage.getItem('vaultPinHash')
+        const { data: { user } } = await supabase.auth.getUser()
+        const stored = user
+            ? (localStorage.getItem(`wv_pinHash_${user.id}`) || localStorage.getItem('vaultPinHash'))
+            : localStorage.getItem('vaultPinHash')
         if (hash === stored) {
             setIsLocked(false)
             setPinInput('')
@@ -76,6 +80,11 @@ export default function VaultLock() {
     }
 
     const handleForgotPin = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+            localStorage.removeItem(`wv_pinHash_${user.id}`)
+            localStorage.setItem(`wv_vaultLockEnabled_${user.id}`, 'false')
+        }
         localStorage.removeItem('vaultPinHash')
         localStorage.setItem('vaultLockEnabled', 'false')
         await supabase.auth.signOut()
