@@ -93,6 +93,45 @@ export default function Settings() {
                     return
                 }
                 setUser(user)
+
+                // Sync user-specific settings
+                const userNotifications = user.user_metadata?.notifications !== undefined
+                    ? user.user_metadata.notifications
+                    : (localStorage.getItem(`wv_emailNotifications_${user.id}`) !== null
+                        ? localStorage.getItem(`wv_emailNotifications_${user.id}`) === 'true'
+                        : (localStorage.getItem('emailNotifications') !== null ? localStorage.getItem('emailNotifications') === 'true' : true))
+                setNotifications(userNotifications)
+
+                const userSessionDuration = user.user_metadata?.session_duration
+                    || localStorage.getItem(`wv_sessionDuration_${user.id}`)
+                    || localStorage.getItem('sessionDuration')
+                    || '7'
+                setSessionDuration(userSessionDuration)
+
+                const userVaultLock = (localStorage.getItem(`wv_vaultLockEnabled_${user.id}`) || localStorage.getItem('vaultLockEnabled')) === 'true'
+                setVaultLockEnabled(userVaultLock)
+
+                const userAutoArchive = (localStorage.getItem(`wv_autoArchiveExpired_${user.id}`) || localStorage.getItem('autoArchiveExpired')) === 'true'
+                setAutoArchiveExpired(userAutoArchive)
+
+                // Sync user-specific theme
+                const userTheme = user.user_metadata?.theme || localStorage.getItem(`wv_theme_${user.id}`)
+                let isDark = false
+                if (userTheme) {
+                    isDark = userTheme === 'dark'
+                } else {
+                    isDark = document.documentElement.classList.contains('dark')
+                }
+                setDarkMode(isDark)
+                if (isDark) {
+                    document.documentElement.classList.add('dark')
+                    localStorage.setItem('theme', 'dark')
+                    localStorage.setItem(`wv_theme_${user.id}`, 'dark')
+                } else {
+                    document.documentElement.classList.remove('dark')
+                    localStorage.setItem('theme', 'light')
+                    localStorage.setItem(`wv_theme_${user.id}`, 'light')
+                }
             } catch (error) {
                 console.error('Auth check error:', error)
                 router.push('/login')
@@ -104,23 +143,28 @@ export default function Settings() {
 
         checkUser()
 
-        // Initialize dark mode state from DOM
-        if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) {
-            setDarkMode(true)
-        }
-
         return () => clearTimeout(timeoutId)
     }, [router])
 
-    const toggleDarkMode = () => {
+    const toggleDarkMode = async () => {
         const newMode = !darkMode
         setDarkMode(newMode)
+        const themeStr = newMode ? 'dark' : 'light'
         if (newMode) {
             document.documentElement.classList.add('dark')
-            localStorage.setItem('theme', 'dark')
         } else {
             document.documentElement.classList.remove('dark')
-            localStorage.setItem('theme', 'light')
+        }
+        localStorage.setItem('theme', themeStr)
+        if (user?.id) {
+            localStorage.setItem(`wv_theme_${user.id}`, themeStr)
+            try {
+                await supabase.auth.updateUser({
+                    data: { theme: themeStr }
+                })
+            } catch (e) {
+                console.error('Error saving user theme:', e)
+            }
         }
     }
 
@@ -136,10 +180,11 @@ export default function Settings() {
     const handleVaultLockToggle = async () => {
         if (!vaultLockEnabled) {
             // Turning ON — check if PIN already exists
-            const existingPin = localStorage.getItem('vaultPinHash')
+            const existingPin = user?.id ? (localStorage.getItem(`wv_pinHash_${user.id}`) || localStorage.getItem('vaultPinHash')) : localStorage.getItem('vaultPinHash')
             if (existingPin) {
                 setVaultLockEnabled(true)
                 localStorage.setItem('vaultLockEnabled', 'true')
+                if (user?.id) localStorage.setItem(`wv_vaultLockEnabled_${user.id}`, 'true')
             } else {
                 // Need to set up a new PIN first
                 setPinSetupStep('enter')
@@ -153,13 +198,25 @@ export default function Settings() {
             setVaultLockEnabled(false)
             localStorage.setItem('vaultLockEnabled', 'false')
             localStorage.removeItem('vaultPinHash')
+            if (user?.id) {
+                localStorage.setItem(`wv_vaultLockEnabled_${user.id}`, 'false')
+                localStorage.removeItem(`wv_pinHash_${user.id}`)
+            }
         }
     }
 
-    const handleAutoArchiveToggle = () => {
+    const handleAutoArchiveToggle = async () => {
         const newValue = !autoArchiveExpired
         setAutoArchiveExpired(newValue)
         localStorage.setItem('autoArchiveExpired', String(newValue))
+        if (user?.id) {
+            localStorage.setItem(`wv_autoArchiveExpired_${user.id}`, String(newValue))
+            try {
+                await supabase.auth.updateUser({ data: { auto_archive_expired: newValue } })
+            } catch (e) {
+                console.error('Error saving auto-archive setting:', e)
+            }
+        }
     }
 
     const handlePinSetupNext = async () => {
@@ -183,6 +240,10 @@ export default function Settings() {
         const hash = await hashPin(pinSetupInput)
         localStorage.setItem('vaultPinHash', hash)
         localStorage.setItem('vaultLockEnabled', 'true')
+        if (user?.id) {
+            localStorage.setItem(`wv_pinHash_${user.id}`, hash)
+            localStorage.setItem(`wv_vaultLockEnabled_${user.id}`, 'true')
+        }
         setVaultLockEnabled(true)
         setShowPinSetup(false)
         setPinSetupInput('')

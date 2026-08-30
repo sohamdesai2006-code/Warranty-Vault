@@ -57,6 +57,11 @@ export async function GET(request: Request) {
             }
 
             const user = userData?.user;
+            if (user?.user_metadata?.notifications === false) {
+                console.log(`Skipping warranty ${warranty.id}: User ${user.email} has disabled email notifications.`);
+                continue;
+            }
+
             const userName = user?.user_metadata?.full_name || 'Customer';
             const userEmail = user?.email;
 

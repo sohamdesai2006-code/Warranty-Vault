@@ -107,6 +107,18 @@ export default function Home() {
       setUser(user)
       fetchWarranties(user)
 
+      // Ensure user's individual theme preference is applied
+      if (typeof window !== 'undefined') {
+        const userTheme = user.user_metadata?.theme || localStorage.getItem(`wv_theme_${user.id}`)
+        if (userTheme === 'dark') {
+          document.documentElement.classList.add('dark')
+          localStorage.setItem('theme', 'dark')
+        } else if (userTheme === 'light') {
+          document.documentElement.classList.remove('dark')
+          localStorage.setItem('theme', 'light')
+        }
+      }
+
       // Check first-time onboarding or replay trigger
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search)
