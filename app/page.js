@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import WelcomeIntro from '@/components/WelcomeIntro'
 
 // Hoisted Helper/Utility Functions to prevent TDZ issues during render initialization
 const getDaysRemaining = (expiryDate) => {
@@ -48,6 +49,7 @@ export default function Home() {
   const [showToast, setShowToast] = useState(false)
   const [autoArchiveExpired, setAutoArchiveExpired] = useState(false)
   const [currentView, setCurrentView] = useState('active') // 'active' | 'expired'
+  const [showIntro, setShowIntro] = useState(false)
 
   const filteredWarranties = useMemo(() => {
     return warranties.filter((w) => {
@@ -72,6 +74,25 @@ export default function Home() {
     })
   }, [warranties, searchQuery, categoryFilter, autoArchiveExpired, currentView])
 
+  const handleIntroComplete = async () => {
+    setShowIntro(false)
+    if (user) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`wv_intro_seen_${user.id}`, 'true')
+        if (window.location.search.includes('replay_intro')) {
+          window.history.replaceState({}, '', '/')
+        }
+      }
+      try {
+        await supabase.auth.updateUser({
+          data: { has_seen_welcome_intro: true }
+        })
+      } catch (e) {
+        console.error('Error updating welcome intro metadata:', e)
+      }
+    }
+  }
+
   useEffect(() => { 
     if (typeof window !== 'undefined') {
       setAutoArchiveExpired(localStorage.getItem('autoArchiveExpired') === 'true')
@@ -85,6 +106,18 @@ export default function Home() {
       }
       setUser(user)
       fetchWarranties(user)
+
+      // Check first-time onboarding or replay trigger
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search)
+        const isReplay = urlParams.get('replay_intro') === 'true'
+        const hasSeenLocal = localStorage.getItem(`wv_intro_seen_${user.id}`) === 'true'
+        const hasSeenMeta = user.user_metadata?.has_seen_welcome_intro === true
+
+        if (isReplay || (!hasSeenLocal && !hasSeenMeta)) {
+          setShowIntro(true)
+        }
+      }
     }
 
     checkUserAndFetch()
@@ -174,6 +207,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white p-4 sm:p-6 md:p-12 transition-colors duration-200">
+
+      {/* ── Cinematic Welcome Intro Overlay ── */}
+      {showIntro && (
+        <WelcomeIntro
+          userName={formatName(user?.user_metadata?.full_name?.split(' ')[0] || '')}
+          onComplete={handleIntroComplete}
+        />
+      )}
 
       {/* ── Success Toast ── */}
       {showToast && (
@@ -442,7 +483,6 @@ export default function Home() {
             )}
           </>
         )}
-
 
       </div>
     </div>

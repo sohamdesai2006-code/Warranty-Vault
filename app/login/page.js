@@ -39,11 +39,11 @@ export default function Login() {
                     transition={{ duration: 0.6 }}
                     className="mb-5 flex flex-col items-center gap-2"
                 >
-                    <img 
-                      src="/logo.png" 
-                      alt="Warranty Vault Logo" 
-                      className="h-44 sm:h-52 w-auto object-contain select-none pointer-events-none" 
-                      draggable="false"
+                    <img
+                        src="/logo.png"
+                        alt="Warranty Vault Logo"
+                        className="h-44 sm:h-52 w-auto object-contain select-none pointer-events-none"
+                        draggable="false"
                     />
                     <div className="text-center">
                         <h2 className="text-xl sm:text-2xl font-semibold tracking-widest bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]">
