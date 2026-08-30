@@ -167,13 +167,23 @@ export default function AddWarranty() {
                 }))
                 setScanSuccess(true)
             } else {
-                const errMsg = data?.error || 'Failed to scan receipt.'
+                let errMsg = data?.error || 'AI scanner is temporarily busy. Please enter details manually or try again in a moment.'
+                if (typeof errMsg === 'object') {
+                    errMsg = errMsg.message || JSON.stringify(errMsg)
+                }
+                const lower = String(errMsg).toLowerCase()
+                if (lower.includes('high demand') || lower.includes('503') || lower.includes('unavailable') || lower.includes('temporary')) {
+                    errMsg = 'AI scanner is experiencing high demand right now. Please try again in a moment or fill in details manually.'
+                } else if (lower.includes('quota') || lower.includes('limit') || lower.includes('429') || lower.includes('resource_exhausted')) {
+                    errMsg = 'AI scan limit reached for today. Please fill in details manually or try again tomorrow.'
+                } else if (lower.includes('read') || lower.includes('json') || lower.includes('parse')) {
+                    errMsg = 'Couldn\'t clearly read receipt text. Please try a clearer photo or enter details manually.'
+                }
                 setScanError(errMsg)
-                console.error('AI scan failed (API limit/error):', errMsg)
+                console.error('AI scan failed:', errMsg)
             }
         } catch (err) {
-            const errMsg = err.message || 'Network error occurred during scan.'
-            setScanError(errMsg)
+            setScanError('AI scan is temporarily unavailable. Please enter details manually.')
             console.error('AI scan failed:', err)
         } finally {
             setIsScanning(false)
@@ -555,35 +565,33 @@ export default function AddWarranty() {
             {/* ── Center-Aligned Content Container ── */}
             <div className="w-full max-w-5xl mx-auto px-4 mt-1 flex-1 min-h-0 lg:overflow-hidden flex flex-col">
                 {/* ── Header Row (Left-aligned with Left Card) ── */}
-                <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between mb-2 w-full gap-2">
-                    <div>
+                <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between mb-2 w-full gap-3">
+                    <div className="shrink-0">
                         <Link href="/" className="text-gray-500 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white text-sm inline-flex items-center gap-1 transition-colors mb-0.5 font-medium">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                             </svg>
                             Back to Dashboard
                         </Link>
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight">
+                        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight whitespace-nowrap">
                             Add New Warranty
                         </h1>
                     </div>
                     {scanSuccess && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg animate-fade-in">
-                            <svg className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl animate-fade-in sm:max-w-md">
+                            <svg className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">AI auto-filled — review before saving.</p>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium leading-snug">AI auto-filled — review before saving.</p>
                         </div>
                     )}
                     {scanError && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/30 rounded-lg animate-fade-in animate-pulse">
-                            <svg className="w-3.5 h-3.5 text-red-500 dark:text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-2 px-3.5 py-1.5 bg-red-500/10 border border-red-500/30 rounded-xl animate-fade-in max-w-full sm:max-w-lg">
+                            <svg className="w-4 h-4 text-red-500 dark:text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                                {/quota|limit|429/i.test(scanError)
-                                    ? 'API scan limit reached. Please fill form manually.'
-                                    : `Scan failed: ${scanError}`}
+                            <p className="text-xs text-red-600 dark:text-red-400 font-medium leading-snug">
+                                {scanError}
                             </p>
                         </div>
                     )}
